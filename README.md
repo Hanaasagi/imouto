@@ -4,10 +4,20 @@ Asynchronous Web API Framework based on `asyncio`
 
 ### Introduction
 
+...
+
+### Documentation
+
+...
 
 ### TODO
 
 - [ ] basic functions
 - [ ] support GraphQL
 - [ ] unittest
-- [ ] improve performance
+- [ ] documentation
+
+
+### License
+
+This software is free to use under the BSD license. See the [LICENSE file](https://github.com/Hanaasagi/imouto/blob/master/LICENSE) for license text and copyright information.

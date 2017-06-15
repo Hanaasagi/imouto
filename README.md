@@ -3,9 +3,6 @@ Asynchronous Web API Framework based on `asyncio`
 *It only work on the version aboved 3.5*
 
 ### Introduction
-
-<img src="https://github.com/Hanaasagi/imouto/blob/master/.resources/logo.png" width="60px" height="60px">
-
 I think it should like this:
 
 ```Python

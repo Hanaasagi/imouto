@@ -8,11 +8,6 @@ from http.client import responses as http_status
 from httptools import HttpRequestParser
 
 
-# `uvloop` can improve performance significantly
-# import uvloop
-# asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
-
-
 class HTTPError(Exception):
     """
     """
@@ -232,9 +227,15 @@ class Application:
             writer.write(chunk)
         writer.write_eof()
 
-    def run(self, port=8080, host='127.0.0.1', debug=False):
+    def run(self, port=8080, host='127.0.0.1', debug=False, *, loop_policy=None):
         if debug:
             autoload()
+        if loop_policy:
+            # For example `uvloop` can improve performance significantly
+            # import uvloop
+            # asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+            asyncio.set_event_loop_policy(loop_policy)
+
         loop = asyncio.get_event_loop()
         print('Running on {}:{} (Press CTRL+C to quit)'.format(host, port))
         loop.create_task(asyncio.start_server(self._execute, host, port))

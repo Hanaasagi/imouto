@@ -2,13 +2,20 @@ from collections import UserDict, Iterable
 
 """Some utility functions and classes"""
 
+
+def trim_keys(dict_):
+    return {k.strip(): v for k, v in dict_.items()}
+
+
 def touni(s, enc='utf8', err='strict'):
     return s.decode(enc, err) if isinstance(s, bytes) else str(s)
+
 
 def _hkey(key):
     if '\n' in key or '\r' in key or '\0' in key:
         raise ValueError("Header names must not contain control characters: %r" % key)
     return key.title().replace('_', '-')
+
 
 def _hval(value):
     value = touni(value)

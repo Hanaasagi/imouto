@@ -4,6 +4,7 @@ import traceback
 from datetime import datetime
 from imouto import Request, Response
 from imouto.autoload import autoload
+from imouto.log import access_log, app_log
 from http.client import responses as http_status
 from httptools import HttpRequestParser
 
@@ -46,7 +47,7 @@ class RequestHandler:
         pass
 
     async def prepare(self):
-        """invoked before get/post/
+        """invoked before get/post/.etc
         """
         pass
 
@@ -183,16 +184,22 @@ class Application:
         res = Response()
         try:
             req = await self._parse_request(request_reader, response_writer)
-            handler, args = self._find_handler(req.path)
+            handler_class, args = self._find_handler(req.path)
             req.args = args
 
             try:
-                await self._route_request(handler, req, res)
+                await self._route_request(handler_class, req, res)
             except HTTPError as e:
                 self.handle_error(res, e)
 
         except Exception as e:
             self.handle_error(res, e)
+
+        access_log.info('', extra={
+            'status': res.status_code,
+            'method': req.method,
+            'path' : req.path + req.query_string
+        })
 
         self._write_response(res, response_writer)
         await response_writer.drain()
@@ -201,10 +208,10 @@ class Application:
     def handle_error(self, res, e):
         res.clear()
         if isinstance(e, HTTPError):
-            res.status_codes = str(e.status_code)
+            res.status_code = e.status_code
             res.write(str(e))
         else:
-            res.status_code = '500'
+            res.status_code = 500
             res.write(res.status_code)
         # need logging
         traceback.print_exc()

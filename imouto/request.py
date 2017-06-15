@@ -5,12 +5,10 @@ import urllib.parse as parse
 from httptools import parse_url
 from imouto.httputils import MultiDict, HeaderDict
 
+
 REQUEST_STATE_PROCESSING = 0
 REQUEST_STATE_CONTINUE = 1
 REQUEST_STATE_COMPLETE = 2
-
-def trim_keys(d):
-    return {k.strip(): v for k, v in d.items()}
 
 
 class FileStorage:
@@ -51,7 +49,7 @@ class Request:
 
     def _parse_form(self, body_stream):
         env = {'REQUEST_METHOD': 'POST'}
-        form = cgi.FieldStorage(body_stream, headers=self.headers, environ=evn)
+        form = cgi.FieldStorage(body_stream, headers=self.headers, environ=env)
         d = {}
         for k in form.keys():
             if form[k].filename:

@@ -4,7 +4,7 @@ Asynchronous Web API Framework based on `asyncio`
 
 ### Introduction
 
-![](https://github.com/Hanaasagi/imouto/blob/master/.resources/logo.png)
+<img src="https://github.com/Hanaasagi/imouto/blob/master/.resources/logo.png" width="60px" height="60px">
 
 I think it should like this:
 

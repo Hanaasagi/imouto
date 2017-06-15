@@ -215,7 +215,7 @@ class Application:
         traceback.print_exc()
 
     def _write_response(self, res, writer):
-        writer.write(b'HTTP/1.1 %s\r\n' % (res.status_code.encode()))
+        writer.write(b'HTTP/1.1 %s\r\n' % (str(res.status_code).encode()))
 
         if 'Content-Length' not in res.headers:
             res.headers['Content-Length'] = str(sum(len(_) for _ in res._chunks))

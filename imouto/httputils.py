@@ -1,5 +1,20 @@
 from collections import UserDict, Iterable
-from httputil import _hkey, _hval
+
+"""Some utility functions and classes"""
+
+def touni(s, enc='utf8', err='strict'):
+    return s.decode(enc, err) if isinstance(s, bytes) else str(s)
+
+def _hkey(key):
+    if '\n' in key or '\r' in key or '\0' in key:
+        raise ValueError("Header names must not contain control characters: %r" % key)
+    return key.title().replace('_', '-')
+
+def _hval(value):
+    value = touni(value)
+    if '\n' in value or '\r' in value or '\0' in value:
+        raise ValueError("Header value must not contain control characters: %r" % value)
+    return value
 
 
 class MultiDict(UserDict):
@@ -79,8 +94,10 @@ class HeaderDict(MultiDict):
     def __setitem__(self, key, value):
         return super().__setitem__(_hkey(key), _hval(value))
 
+    def get(self, key, default=None, index=-1):
+        return super().get(_hkey(key), default, index)
+
     def getall(self, key):
         return super().getall(_hkey(key))
 
-    def get(self, key, default=None, index=-1):
-        return super().get(self, _hkey(key), default, index)
+

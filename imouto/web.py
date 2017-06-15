@@ -3,14 +3,34 @@ import asyncio
 import traceback
 from datetime import datetime
 from imouto import Request, Response
-from imouto.status_codes import HTTP_404, HTTP_500, HTTP_405
-from imouto.http_error import HTTPError
 from imouto.autoload import autoload
+from http.client import responses as http_status
 from httptools import HttpRequestParser
 
-# significantly improve performance
+
+# `uvloop` can improve performance significantly
 # import uvloop
 # asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+
+
+class HTTPError(Exception):
+    """
+    """
+
+    def __init__(self, status_code=500, log_message=None, *args):
+        self.status_code = status_code
+        self.log_message = log_message
+        self.args = args
+        if log_message and not args:
+            self.log_message = log_message.replace('%', '%%')
+
+    def __str__(self):
+        message = "HTTP %d: %s" % (self.status_code,
+                                   http_status.get(self.status_code, 'Unknown'))
+        if self.log_message:
+            return message + " (" + (self.log_message % self.args) + ")"
+        else:
+            return message
 
 
 class RequestHandler:
@@ -56,6 +76,13 @@ class RequestHandler:
     async def options(self, *args, **kwargs):
         raise HTTPError(405)
 
+    async def redirect(self, url, permanent=False):
+        if permanent:
+            self.response.status_code = status_codes.HTTP_301
+        else:
+            self.response.status_code = status_codes.HTTP_302
+        self.response.headers['Location'] = url
+
     async def write_cookie(self, writer, key, value):
         if isinstance(value, tuple):
             value, duration = value
@@ -69,6 +96,20 @@ class RequestHandler:
         else:
             writer.write(b'Set-Cookie: %s=%s\r\n' % (
                 key.encode(), str(value).encode()))
+
+
+class RedirectHandler(RequestHandler):
+
+    def initialize(self, url, permanent=True):
+        self._url = url
+        self._permanent = permanent
+
+    async def get(self):
+        self.redirect(self._url, permanent=self._permanent)
+
+
+class ErrorHandler(RequestHandler):
+    pass
 
 
 class Application:
@@ -117,6 +158,8 @@ class Application:
 
 
     async def _parse_request(self, request_reader, response_writer):
+        """parse data from StreamReader and build the request object
+        """
         limit  = 2 ** 16
         req = Request()
         parser = HttpRequestParser(req)
@@ -133,11 +176,10 @@ class Application:
         req.method = parser.get_method().decode().upper()
         return req
 
-
     async def _route_request(self, handler_class, req, res):
         method = req.method
         if handler_class is None:
-            raise HTTPError(HTTP_404)
+            raise HTTPError(404)
 
         handler = handler_class(self, req, res)
         await getattr(handler, method.lower())()
@@ -145,7 +187,7 @@ class Application:
     async def _execute(self, request_reader, response_writer):
         res = Response()
         try:
-            req = await self._parse_request( request_reader, response_writer)
+            req = await self._parse_request(request_reader, response_writer)
             handler, args = self._find_handler(req.path)
             req.args = args
 
@@ -164,23 +206,28 @@ class Application:
     def handle_error(self, res, e):
         res.clear()
         if isinstance(e, HTTPError):
-            res.status_codes = e.status_code
-            res.write(e.message)
+            res.status_codes = str(e.status_code)
+            res.write(str(e))
         else:
-            res.status_code = HTTP_500
+            res.status_code = '500'
             res.write(res.status_code)
+        # need logging
         traceback.print_exc()
 
     def _write_response(self, res, writer):
         writer.write(b'HTTP/1.1 %s\r\n' % (res.status_code.encode()))
+
         if 'Content-Length' not in res.headers:
-            length = sum(len(_) for _ in res._chunks)
-            res.headers['Content-Length'] = str(length)
+            res.headers['Content-Length'] = str(sum(len(_) for _ in res._chunks))
+
         for key, value in res.headers.items():
             writer.write(key.encode() + b': ' + str(value).encode() + b'\r\n')
+
         for key, value in res.cookies.items():
             write_cookie(writer, key, value)
+
         writer.write(b'\r\n')
+
         for chunk in res._chunks:
             writer.write(chunk)
         writer.write_eof()

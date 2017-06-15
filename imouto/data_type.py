@@ -1,7 +1,6 @@
-from collections import UserDict
-from collections import ChainMap
-from collections import Iterable
-from itertools import product
+from collections import UserDict, Iterable
+from httputil import _hkey, _hval
+
 
 class MultiDict(UserDict):
     """ This dict stores multiple values per key, but behaves exactly like a
@@ -62,3 +61,26 @@ class MultiDict(UserDict):
                 self.data.setdefault(key, []).append(value)
         for key, value in k_v.items():
             self.data.setdefault(key, []).append(value)
+
+
+class HeaderDict(MultiDict):
+    """ A case-insensitive version of :class:`MultiDict` that defaults to
+        replace the old value instead of appending it. """
+
+    def __contains__(self, key):
+        return super().__contains__(_hkey(key))
+
+    def __delitem__(self, key):
+        return super().__delitem__(_hkey(key))
+
+    def __getitem__(self, key):
+        return super().__getitem__(_hkey(key))
+
+    def __setitem__(self, key, value):
+        return super().__setitem__(_hkey(key), _hval(value))
+
+    def getall(self, key):
+        return super().getall(_hkey(key))
+
+    def get(self, key, default=None, index=-1):
+        return super().get(self, _hkey(key), default, index)

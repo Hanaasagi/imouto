@@ -244,17 +244,21 @@ class Application:
     def _write_response(self, res, writer):
         writer.write(b'HTTP/1.1 %s\r\n' % (str(res.status_code).encode()))
 
+        # write headers
         if 'Content-Length' not in res.headers:
             res.headers['Content-Length'] = str(sum(len(_) for _ in res._chunks))
 
         for key, value in res.headers.items():
             writer.write(key.encode() + b': ' + str(value).encode() + b'\r\n')
 
-        writer.write(res.cookies.output().encode() + b'\r\n')
+        if res.cookies:
+            writer.write(res.cookies.output().encode() + b'\r\n')
+
+        # split resposne headers and body
         writer.write(b'\r\n')
 
-        for chunk in res._chunks:
-            writer.write(chunk)
+        # write http body
+        writer.writelines(res._chunks)
         writer.write_eof()
 
     def run(self, port=8080, host='127.0.0.1', *, loop_policy=None):

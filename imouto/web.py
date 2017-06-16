@@ -191,23 +191,21 @@ class Application:
         req.method = parser.get_method().decode().upper()
         return req
 
-    async def _route_request(self, handler_class, req, res):
+    async def _route_request(self, handler_class, req, res, args):
         method = req.method
         if handler_class is None:
             raise HTTPError(404)
 
         handler = handler_class(self, req, res)
-        await getattr(handler, method.lower())()
+        await getattr(handler, method.lower())(**args)
 
     async def _execute(self, request_reader, response_writer):
         res = Response()
         try:
             req = await self._parse_request(request_reader, response_writer)
             handler_class, args = self._find_handler(req.path)
-            req.args = args
-
             try:
-                await self._route_request(handler_class, req, res)
+                await self._route_request(handler_class, req, res, args)
             except HTTPError as e:
                 self.handle_error(res, e)
 

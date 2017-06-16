@@ -195,6 +195,7 @@ class Application:
         except Exception as e:
             self.handle_error(res, e)
 
+        # output the access log
         access_log.info('', extra={
             'status': res.status_code,
             'method': req.method,
@@ -244,7 +245,8 @@ class Application:
             asyncio.set_event_loop_policy(loop_policy)
 
         loop = asyncio.get_event_loop()
-        print('Running on {}:{} (Press CTRL+C to quit)'.format(host, port))
+        app_log.info('Running on {}:{} [{}](Press CTRL+C to quit)'.format(
+            host, port, 'debug mode' if debug else ''))
         loop.create_task(asyncio.start_server(self._execute, host, port))
         loop.run_forever()
         loop.close()

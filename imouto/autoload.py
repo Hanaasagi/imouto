@@ -27,7 +27,6 @@ def autoload(interval=1):
     """
     # os.environ['IMOUTO_APP'] is vairable to identify main/sub process
     if not os.environ.get('IMOUTO_APP'):
-        print('autoload mode start')
         try:
             lockfile = None
             fd, lockfile = tempfile.mkstemp(prefix='IMOUTO_APP', suffix='.lock')

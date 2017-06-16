@@ -12,15 +12,15 @@ class Response:
         ])
         self.cookies = {}
 
-    def clear(self):
+    def _clear(self):
         self._chunks = []
 
-    def write(self, string):
+    def _write(self, string):
         self._chunks.append(string.encode())
 
-    def write_bytes(self, bytes):
-        self._chunks.append(bytes)
+    def _write_bytes(self, bytes_):
+        self._chunks.append(bytes_)
 
-    def write_json(self, data):
+    def _write_json(self, data):
         self.headers['Content-Type'] = 'application/json'
         self._chunks.append(json.dumps(data).encode())

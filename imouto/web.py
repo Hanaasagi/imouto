@@ -72,11 +72,14 @@ class RequestHandler:
     async def options(self, *args, **kwargs):
         raise HTTPError(405)
 
-    async def redirect(self, url, permanent=False):
+    def write(self, chunk):
+        self.response._write(chunk)
+
+    def redirect(self, url, permanent=False):
         if permanent:
-            self.response.status_code = status_codes.HTTP_301
+            self.response.status_code = 301
         else:
-            self.response.status_code = status_codes.HTTP_302
+            self.response.status_code = 302
         self.response.headers['Location'] = url
 
     async def write_cookie(self, writer, key, value):

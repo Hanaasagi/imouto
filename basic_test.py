@@ -1,19 +1,19 @@
-import unittest
-from imouto.web import Application
-from imouto.web import RequestHandler
 import asyncio
+from imouto.web import Application, RequestHandler
 
-
-class Handler(RequestHandler):
+class MainHandler(RequestHandler):
 
     async def get(self):
         await asyncio.sleep(0.1)
-        self.response.write('Hello, %s' % self.request.args['name'])
+        self.write('Hello, %s' % self.request.args['name'])
 
-class BasicTest(unittest.TestCase):
-    pass
+class RHandler(RequestHandler):
+
+    async def get(self):
+        self.redirect('/妹')
 
 
 app = Application([
-    (r'/{name}', Handler)])
+    (r'/{name}', MainHandler),
+    (r'/', RHandler)])
 app.run(debug=True)

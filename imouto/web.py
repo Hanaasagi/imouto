@@ -28,6 +28,19 @@ class HTTPError(Exception):
         else:
             return message
 
+def log(status_code, method, path):
+    if status_code >= 500:
+        logger = access_log.error
+    elif status_code >= 400:
+        logger = access_log.warning
+    else:
+        logger = access_log.info
+    logger('', extra={
+        'status': status_code,
+        'method': method,
+        'path' :  path
+    })
+
 
 class RequestHandler:
     """Base class
@@ -75,6 +88,9 @@ class RequestHandler:
     def write(self, chunk):
         self.response._write(chunk)
 
+    def write_json(self, data):
+        self.response._write_json(data)
+
     def redirect(self, url, permanent=False):
         if permanent:
             self.response.status_code = 301
@@ -82,7 +98,7 @@ class RequestHandler:
             self.response.status_code = 302
         self.response.headers['Location'] = url
 
-    async def write_cookie(self, writer, key, value):
+    def set_cookie(self, writer, key, value):
         if isinstance(value, tuple):
             value, duration = value
             if isinstance(duration, datetime):
@@ -199,12 +215,8 @@ class Application:
             self.handle_error(res, e)
 
         # output the access log
-        access_log.info('', extra={
-            'status': res.status_code,
-            'method': req.method,
-            'path' : req.path + req.query_string
-        })
-
+        log(status_code=res.status_code, method=req.method,
+            path=req.path+req.query_string)
         self._write_response(res, response_writer)
         await response_writer.drain()
         response_writer.close()
@@ -230,7 +242,7 @@ class Application:
             writer.write(key.encode() + b': ' + str(value).encode() + b'\r\n')
 
         for key, value in res.cookies.items():
-            write_cookie(writer, key, value)
+            set_cookie(writer, key, value)
 
         writer.write(b'\r\n')
 

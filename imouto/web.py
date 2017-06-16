@@ -136,6 +136,8 @@ class Application:
         if handlers:
             self.add_handlers(handlers)
 
+        self.debug = settings.get('debug', False)
+
     def add_handlers(self, handlers):
         """Append handlers to handler list
         """
@@ -207,10 +209,10 @@ class Application:
             try:
                 await self._route_request(handler_class, req, res, args)
             except HTTPError as e:
-                self.handle_error(res, e)
+                self._handle_error(res, e)
 
         except Exception as e:
-            self.handle_error(res, e)
+            self._handle_error(res, e)
 
         # output the access log
         log(status_code=res.status_code, method=req.method,
@@ -219,16 +221,16 @@ class Application:
         await response_writer.drain()
         response_writer.close()
 
-    def handle_error(self, res, e):
-        res.clear()
+    def _handle_error(self, res, e):
+        res._clear()
         if isinstance(e, HTTPError):
             res.status_code = e.status_code
-            res.write(str(e))
+            res._write(str(e))
         else:
             res.status_code = 500
-            res.write(res.status_code)
-        # need logging
-        traceback.print_exc()
+            res._write(res.status_code)
+        if self.debug:
+            res._write('\n' + traceback.format_exc())
 
     def _write_response(self, res, writer):
         writer.write(b'HTTP/1.1 %s\r\n' % (str(res.status_code).encode()))
@@ -248,8 +250,8 @@ class Application:
             writer.write(chunk)
         writer.write_eof()
 
-    def run(self, port=8080, host='127.0.0.1', debug=False, *, loop_policy=None):
-        if debug:
+    def run(self, port=8080, host='127.0.0.1', *, loop_policy=None):
+        if self.debug:
             autoload()
         if loop_policy:
             # For example `uvloop` can improve performance significantly
@@ -259,7 +261,7 @@ class Application:
 
         loop = asyncio.get_event_loop()
         app_log.info('Running on {}:{} [{}](Press CTRL+C to quit)'.format(
-            host, port, 'debug mode' if debug else ''))
+            host, port, 'debug mode' if self.debug else ''))
         loop.create_task(asyncio.start_server(self._execute, host, port))
         loop.run_forever()
         loop.close()

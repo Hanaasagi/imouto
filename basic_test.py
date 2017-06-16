@@ -20,5 +20,5 @@ class JsonHandler(RequestHandler):
 app = Application([
     (r'/{name}', MainHandler),
     (r'/', RHandler),
-    (r'/api/', JsonHandler)])
-app.run(debug=True)
+    (r'/api/', JsonHandler)], debug=True)
+app.run()

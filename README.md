@@ -1,4 +1,6 @@
 # imōto(妹)
+[![Build Status](https://travis-ci.org/Hanaasagi/imouto.svg?branch=master)](https://travis-ci.org/Hanaasagi/imouto)
+
 Asynchronous Web API Framework based on `asyncio`  
 *It only work on the version aboved 3.5*
 

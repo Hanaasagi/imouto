@@ -1,13 +1,15 @@
 import re
+import time
 import asyncio
 import traceback
 from datetime import datetime
 from imouto import Request, Response
 from imouto.autoload import autoload
 from imouto.log import access_log, app_log
+from imouto.httputils import hkey, hval
 from http.client import responses as http_status
+from http.cookies import SimpleCookie
 from httptools import HttpRequestParser
-
 
 class HTTPError(Exception):
     """
@@ -98,20 +100,27 @@ class RequestHandler:
             self.response.status_code = 302
         self.response.headers['Location'] = url
 
-    def set_cookie(self, writer, key, value):
-        if isinstance(value, tuple):
-            value, duration = value
-            if isinstance(duration, datetime):
-                format = duration.strftime('%a %d %b %Y %H:%M:%S GMT').encode()
-                writer.write(b'Set-Cookie: %s-%s;expires=%s\r\n' % (
-                    key.encode(), str(value).encode(), format))
-            elif isinstance(duration, int):
-                writer.write(b'Set-Cookie: %s=%s;max-age=%d\r\n' % (
-                    key.encode(), str(value).encode(), duration))
-        else:
-            writer.write(b'Set-Cookie: %s=%s\r\n' % (
-                key.encode(), str(value).encode()))
+    def set_cookie(self, name, value, **options):
+        if len(value) > 4096:
+            raise ValueError('Cookie value to long.')
 
+        self.response.cookies[name] = value
+
+        for key, value in options.items():
+            key = hkey(key)
+            if key == 'max_age':
+                if isinstance(value, timedelta):
+                    value = value.seconds + value.days * 24 * 3600
+            if key == 'expires':
+                if isinstance(value, (datedate, datetime)):
+                    value = value.timetuple()
+                elif isinstance(value, (int, float)):
+                    value = time.gmtime(value)
+                value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
+            self.response.cookies[name][key] = value
+
+    def clear_cookie(self, key, **kwargs):
+        pass
 
 class RedirectHandler(RequestHandler):
 
@@ -241,9 +250,7 @@ class Application:
         for key, value in res.headers.items():
             writer.write(key.encode() + b': ' + str(value).encode() + b'\r\n')
 
-        for key, value in res.cookies.items():
-            set_cookie(writer, key, value)
-
+        writer.write(res.cookies.output().encode() + b'\r\n')
         writer.write(b'\r\n')
 
         for chunk in res._chunks:

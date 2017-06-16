@@ -5,6 +5,7 @@ class MainHandler(RequestHandler):
 
     async def get(self, name):
         await asyncio.sleep(0.1)
+        self.set_cookie('name', 'imouto')
         self.write('Hello, %s' % name)
 
 class RHandler(RequestHandler):

@@ -11,13 +11,13 @@ def touni(s, enc='utf8', err='strict'):
     return s.decode(enc, err) if isinstance(s, bytes) else str(s)
 
 
-def _hkey(key):
+def hkey(key):
     if '\n' in key or '\r' in key or '\0' in key:
         raise ValueError("Header names must not contain control characters: %r" % key)
     return key.title().replace('_', '-')
 
 
-def _hval(value):
+def hval(value):
     value = touni(value)
     if '\n' in value or '\r' in value or '\0' in value:
         raise ValueError("Header value must not contain control characters: %r" % value)
@@ -90,21 +90,21 @@ class HeaderDict(MultiDict):
         replace the old value instead of appending it. """
 
     def __contains__(self, key):
-        return super().__contains__(_hkey(key))
+        return super().__contains__(hkey(key))
 
     def __delitem__(self, key):
-        return super().__delitem__(_hkey(key))
+        return super().__delitem__(hkey(key))
 
     def __getitem__(self, key):
-        return super().__getitem__(_hkey(key))
+        return super().__getitem__(hkey(key))
 
     def __setitem__(self, key, value):
-        return super().__setitem__(_hkey(key), _hval(value))
+        return super().__setitem__(hkey(key), hval(value))
 
     def get(self, key, default=None, index=-1):
-        return super().get(_hkey(key), default, index)
+        return super().get(hkey(key), default, index)
 
     def getall(self, key):
-        return super().getall(_hkey(key))
+        return super().getall(hkey(key))
 
 

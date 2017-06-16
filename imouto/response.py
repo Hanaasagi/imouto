@@ -1,4 +1,5 @@
 import json
+from http.cookies import SimpleCookie
 from imouto.httputils import HeaderDict
 
 
@@ -10,7 +11,7 @@ class Response:
         self.headers = HeaderDict([
             ('Content-Type', 'text/html')
         ])
-        self.cookies = {}
+        self.cookies = SimpleCookie()
 
     def _clear(self):
         self._chunks = []

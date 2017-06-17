@@ -1,6 +1,5 @@
 import re
 import time
-import json
 import asyncio
 import traceback
 from collections import Mapping
@@ -17,7 +16,7 @@ from httptools import HttpRequestParser
 from typing import Tuple, List, Any
 
 class HTTPError(Exception):
-    """
+    """Exception
     """
 
     def __init__(self, status_code: int = 500, log_message: str = '',
@@ -36,13 +35,16 @@ class HTTPError(Exception):
         else:
             return message
 
-def log(status_code: int, method: str, path: str) -> None:
+def log(status_code: int, method: str, path: str, query_string: str) -> None:
     if status_code >= 500:
         logger = access_log.error
     elif status_code >= 400:
         logger = access_log.warning
     else:
         logger = access_log.info
+
+    if query_string:
+        path = "%s?%s" % (path, query_string)
     logger('', extra={
         'status': status_code,
         'method': method,
@@ -217,7 +219,7 @@ class Application:
                 response_writer.write(b'HTTP/1.1 100 (Continue)\r\n\r\n')
                 req.reset_state()
 
-        req.method = parser.get_method().decode().upper()
+        req.method = touni(parser.get_method()).upper()
         return req
 
     async def _route_request(self, handler_class: type,
@@ -243,9 +245,9 @@ class Application:
         except Exception as e:
             self._handle_error(res, e)
 
-        # output the access log
+        # output the access log)
         log(status_code=res.status_code, method=req.method,
-            path=req.path+req.query_string)
+            path=req.path, query_string=req.query_string)
         self._write_response(res, response_writer)
         await response_writer.drain()
         response_writer.close()

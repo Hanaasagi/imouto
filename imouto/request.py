@@ -11,6 +11,10 @@ REQUEST_STATE_CONTINUE = 1
 REQUEST_STATE_COMPLETE = 2
 
 
+def trim_keys(dict_):
+    return {key.strip(): value for key, value in dict_.items()}
+
+
 class FileStorage:
 
     def __init__(self, field_storage):

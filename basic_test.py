@@ -5,6 +5,7 @@ class MainHandler(RequestHandler):
 
     async def get(self, name):
         await asyncio.sleep(0.1)
+        print('after 0.1 sec')
         self.write(self.get_cookie('test', 'test'))
         self.set_cookie('name', 'imouto')
         self.write('Hello, %s' % name)

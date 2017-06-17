@@ -32,8 +32,8 @@ app.run(debug=True)
 
 ### TODO
 
-- [+] basic functions
-- [+] debug mode
+- [x] basic functions
+- [x] debug mode
 - [ ] support GraphQL
 - [ ] unittest
 - [ ] add CI

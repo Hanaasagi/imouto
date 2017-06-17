@@ -7,6 +7,10 @@ def trim_keys(dict_):
     return {k.strip(): v for k, v in dict_.items()}
 
 
+def tob(s, enc='utf8'):
+    return s.encode(enc) if isinstance(s, str) else bytes(s)
+
+
 def touni(s, enc='utf8', err='strict'):
     return s.decode(enc, err) if isinstance(s, bytes) else str(s)
 

@@ -5,6 +5,7 @@ class MainHandler(RequestHandler):
 
     async def get(self, name):
         await asyncio.sleep(0.1)
+        self.write(self.get_cookie('test', 'test'))
         self.set_cookie('name', 'imouto')
         self.write('Hello, %s' % name)
 
@@ -16,7 +17,10 @@ class RHandler(RequestHandler):
 class JsonHandler(RequestHandler):
 
     async def get(self):
-        self.write_json(dict(a=1,b=2))
+        try:
+            self.write_json(dict(a=1,b=2))
+        except Exception as e:
+            print(e)
 
 app = Application([
     (r'/{name}', MainHandler),

@@ -1,7 +1,9 @@
 import re
 import time
+import json
 import asyncio
 import traceback
+from collections import Mapping
 from datetime import date as date_t, datetime, timedelta
 from http.client import responses as http_status
 from http.cookies import SimpleCookie
@@ -12,13 +14,14 @@ from imouto.httputils import hkey, hval, tob, touni
 from httptools import HttpRequestParser
 
 # for type check
-from typing import Tuple, List
+from typing import Tuple, List, Any
 
 class HTTPError(Exception):
     """
     """
 
-    def __init__(self, status_code: int = 500, log_message: str = '', *args) -> None:
+    def __init__(self, status_code: int = 500, log_message: str = '',
+                 *args) -> None:
         self.status_code = status_code
         self.log_message = log_message
         self.args = args
@@ -92,9 +95,12 @@ class RequestHandler:
         raise HTTPError(405)
 
     def write(self, chunk: str):
-        self.response._write(chunk)
+        # chunk may be other types for example None
+        # so call their `__str__` method to get string epresentation
+        self.response._write(chunk.__str__())
 
-    def write_json(self, data: dict):
+    def write_json(self, data: Any):
+        """convert data to json and write"""
         self.response._write_json(data)
 
     def redirect(self, url: str, permanent=False):
@@ -104,11 +110,18 @@ class RequestHandler:
             self.response.status_code = 302
         self.response.headers['Location'] = url
 
+    @property
+    def cookies(self):
+        return self.request.cookies
+
+    def get_cookie(self, name: str, default: Any = None):
+        return self.cookies.get(name, default)
+
     def set_cookie(self, name: str, value: str, **options):
         if len(value) > 4096:
             raise ValueError('Cookie value to long.')
 
-        self.response.cookies[name] = value
+        self.cookies[name] = value
 
         for key, val in options.items():
             key = hkey(key)
@@ -121,7 +134,7 @@ class RequestHandler:
                 elif isinstance(val, (int, float)):
                     val = time.gmtime(val)
                 val = time.strftime("%a, %d %b %Y %H:%M:%S GMT", val)
-            self.response.cookies[name][key] = val
+            self.cookies[name][key] = val
 
     def clear_cookie(self, key: str, **kwargs):
         pass

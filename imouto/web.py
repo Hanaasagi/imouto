@@ -26,7 +26,7 @@ class HTTPError(Exception):
         message = "HTTP %d: %s" % (self.status_code,
                                    http_status.get(self.status_code, 'Unknown'))
         if self.log_message:
-            return message + " (" + (self.log_message % self.args) + ")"
+            return "%s (%s)" % (message, self.log_message % self.args)
         else:
             return message
 
@@ -271,8 +271,8 @@ class Application:
             asyncio.set_event_loop_policy(loop_policy)
 
         loop = asyncio.get_event_loop()
-        app_log.info('Running on {}:{} [{}](Press CTRL+C to quit)'.format(
-            host, port, 'debug mode' if self.debug else ''))
+        app_log.info('Running on %s:%s [%s](Press CTRL+C to quit)'
+                     % ( host, port, 'debug mode' if self.debug else ''))
         loop.create_task(asyncio.start_server(self._execute, host, port))
         loop.run_forever()
         loop.close()

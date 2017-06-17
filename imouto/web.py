@@ -2,20 +2,23 @@ import re
 import time
 import asyncio
 import traceback
-from datetime import datetime
+from datetime import date as date_t, datetime, timedelta
+from http.client import responses as http_status
+from http.cookies import SimpleCookie
 from imouto import Request, Response
 from imouto.autoload import autoload
 from imouto.log import access_log, app_log
-from imouto.httputils import hkey, hval
-from http.client import responses as http_status
-from http.cookies import SimpleCookie
+from imouto.httputils import hkey, hval, tob, touni
 from httptools import HttpRequestParser
+
+# for type check
+from typing import Tuple, List
 
 class HTTPError(Exception):
     """
     """
 
-    def __init__(self, status_code=500, log_message=None, *args):
+    def __init__(self, status_code: int = 500, log_message: str = '', *args) -> None:
         self.status_code = status_code
         self.log_message = log_message
         self.args = args
@@ -30,7 +33,7 @@ class HTTPError(Exception):
         else:
             return message
 
-def log(status_code, method, path):
+def log(status_code: int, method: str, path: str) -> None:
     if status_code >= 500:
         logger = access_log.error
     elif status_code >= 400:
@@ -48,7 +51,8 @@ class RequestHandler:
     """Base class
     """
 
-    def __init__(self, application, request, response, **kwargs):
+    def __init__(self, application, request: Request, response: Response,
+                 **kwargs) -> None:
         """subclass should override initialize method rather than this
         """
         self.application = application
@@ -56,12 +60,12 @@ class RequestHandler:
         self.response = response
         self.initialize(**kwargs)
 
-    def initialize(self):
+    def initialize(self, *args, **kwargs):
         """subclass initialization
         """
         pass
 
-    async def prepare(self):
+    async def prepare(self, *args, **kwargs):
         """invoked before get/post/.etc
         """
         pass
@@ -87,44 +91,44 @@ class RequestHandler:
     async def options(self, *args, **kwargs):
         raise HTTPError(405)
 
-    def write(self, chunk):
+    def write(self, chunk: str):
         self.response._write(chunk)
 
-    def write_json(self, data):
+    def write_json(self, data: dict):
         self.response._write_json(data)
 
-    def redirect(self, url, permanent=False):
+    def redirect(self, url: str, permanent=False):
         if permanent:
             self.response.status_code = 301
         else:
             self.response.status_code = 302
         self.response.headers['Location'] = url
 
-    def set_cookie(self, name, value, **options):
+    def set_cookie(self, name: str, value: str, **options):
         if len(value) > 4096:
             raise ValueError('Cookie value to long.')
 
         self.response.cookies[name] = value
 
-        for key, value in options.items():
+        for key, val in options.items():
             key = hkey(key)
             if key == 'max_age':
-                if isinstance(value, timedelta):
-                    value = value.seconds + value.days * 24 * 3600
+                if isinstance(val, timedelta):
+                    val = val.seconds + val.days * 24 * 3600
             if key == 'expires':
-                if isinstance(value, (datedate, datetime)):
-                    value = value.timetuple()
-                elif isinstance(value, (int, float)):
-                    value = time.gmtime(value)
-                value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
-            self.response.cookies[name][key] = value
+                if isinstance(val, (date_t, datetime)):
+                    val = val.timetuple()
+                elif isinstance(val, (int, float)):
+                    val = time.gmtime(val)
+                val = time.strftime("%a, %d %b %Y %H:%M:%S GMT", val)
+            self.response.cookies[name][key] = val
 
-    def clear_cookie(self, key, **kwargs):
+    def clear_cookie(self, key: str, **kwargs):
         pass
 
 class RedirectHandler(RequestHandler):
 
-    def initialize(self, url, permanent=True):
+    def initialize(self, url: str, permanent=True):
         self._url = url
         self._permanent = permanent
 
@@ -147,7 +151,7 @@ class Application:
 
         self.debug = settings.get('debug', False)
 
-    def add_handlers(self, handlers):
+    def add_handlers(self, handlers: List[Tuple[str, str]]):
         """Append handlers to handler list
         """
         # '.*$' will always match, so it will be last one
@@ -165,7 +169,7 @@ class Application:
             self._handlers.appned(last_one)
 
 
-    def _find_handler(self, path):
+    def _find_handler(self, path: str):
         """Find the corresponding handler for the path
         if nothing mathed but having default handler, use default
         otherwise 404 Not Found
@@ -183,7 +187,8 @@ class Application:
         return ErrorHandler, None
 
 
-    async def _parse_request(self, request_reader, response_writer):
+    async def _parse_request(self, request_reader: asyncio.StreamReader,
+                             response_writer: asyncio.StreamWriter) -> Request:
         """parse data from StreamReader and build the request object
         """
         limit  = 2 ** 16
@@ -195,14 +200,15 @@ class Application:
             parser.feed_data(data)
             if req.finished or not data:
                 break
-            elif req.needs_wirte_continue:
+            elif req.needs_write_continue:
                 response_writer.write(b'HTTP/1.1 100 (Continue)\r\n\r\n')
                 req.reset_state()
 
         req.method = parser.get_method().decode().upper()
         return req
 
-    async def _route_request(self, handler_class, req, res, args):
+    async def _route_request(self, handler_class: type,
+                             req: Request, res: Response, args):
         method = req.method
         if handler_class is None:
             raise HTTPError(404)
@@ -210,7 +216,8 @@ class Application:
         handler = handler_class(self, req, res)
         await getattr(handler, method.lower())(**args)
 
-    async def _execute(self, request_reader, response_writer):
+    async def _execute(self, request_reader: asyncio.StreamReader,
+                       response_writer: asyncio.StreamWriter):
         res = Response()
         try:
             req = await self._parse_request(request_reader, response_writer)
@@ -230,7 +237,7 @@ class Application:
         await response_writer.drain()
         response_writer.close()
 
-    def _handle_error(self, res, e):
+    def _handle_error(self, res: Response, e: Exception):
         res._clear()
         if isinstance(e, HTTPError):
             res.status_code = e.status_code
@@ -241,18 +248,18 @@ class Application:
         if self.debug:
             res._write('\n' + traceback.format_exc())
 
-    def _write_response(self, res, writer):
-        writer.write(b'HTTP/1.1 %s\r\n' % (str(res.status_code).encode()))
+    def _write_response(self, res, writer: asyncio.StreamWriter):
+        writer.write(b'HTTP/1.1 %s\r\n' % (tob(touni(res.status_code))))
 
         # write headers
         if 'Content-Length' not in res.headers:
-            res.headers['Content-Length'] = str(sum(len(_) for _ in res._chunks))
+            res.headers['Content-Length'] = touni(sum(len(_) for _ in res._chunks))
 
         for key, value in res.headers.items():
-            writer.write(key.encode() + b': ' + str(value).encode() + b'\r\n')
+            writer.write(tob(key) + b': ' + tob(touni(value)) + b'\r\n')
 
         if res.cookies:
-            writer.write(res.cookies.output().encode() + b'\r\n')
+            writer.write(tob(res.cookies.output()) + b'\r\n')
 
         # split resposne headers and body
         writer.write(b'\r\n')
@@ -261,7 +268,8 @@ class Application:
         writer.writelines(res._chunks)
         writer.write_eof()
 
-    def run(self, port=8080, host='127.0.0.1', *, loop_policy=None):
+    def run(self, *, host: str = '127.0.0.1', port: int = 8080,
+            loop_policy: asyncio.AbstractEventLoopPolicy = None):
         if self.debug:
             autoload()
         if loop_policy:

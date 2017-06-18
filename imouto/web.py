@@ -16,7 +16,7 @@ from httptools import HttpRequestParser
 from typing import Tuple, List, Any
 
 class HTTPError(Exception):
-    """Exception
+    """Exception represented HTTP Error
     """
 
     def __init__(self, status_code: int = 500, log_message: str = '',
@@ -32,10 +32,12 @@ class HTTPError(Exception):
                                    http_status.get(self.status_code, 'Unknown'))
         if self.log_message:
             return "%s (%s)" % (message, self.log_message % self.args)
-        else:
-            return message
+        return message
 
 def log(status_code: int, method: str, path: str, query_string: str) -> None:
+    """logging the access message
+    logging level depend http status code
+    """
     if status_code >= 500:
         logger = access_log.error
     elif status_code >= 400:
@@ -67,6 +69,7 @@ class RequestHandler:
 
     def initialize(self, *args, **kwargs):
         """subclass initialization
+        need to be overrided
         """
         pass
 
@@ -97,15 +100,22 @@ class RequestHandler:
         raise HTTPError(405)
 
     def write(self, chunk: str):
-        # chunk may be other types for example None
-        # so call their `__str__` method to get string epresentation
+        """write data to the response buffer
+        chunk may be other types for example None
+        so call their `__str__` method to get string epresentation
+        """
         self.response._write(chunk.__str__())
 
     def write_json(self, data: Any):
-        """convert data to json and write"""
+        """data will converted to json and write
+        """
+        # need enclosing try-except
         self.response._write_json(data)
 
     def redirect(self, url: str, permanent=False):
+        """HTTP Redirect
+        permanent determines 301 or 302
+        """
         if permanent:
             self.response.status_code = 301
         else:
@@ -114,12 +124,27 @@ class RequestHandler:
 
     @property
     def cookies(self):
+        """request cookies
+        """
         return self.request.cookies
 
     def get_cookie(self, name: str, default: Any = None):
+        """get cookie from http request, can set default value
+        """
         return self.cookies.get(name, default)
 
     def set_cookie(self, name: str, value: str, **options):
+        """set cookie to http resposne
+        :param options: enable to include following options
+        :param max_age: maximum age in seconds. (default: None)
+        :param expires: a datetime object or UNIX timestamp. (default: None)
+        :param domain: the domain that is allowed to read the cookie.
+            (default: current domain)
+        :param path: limits the cookie to a given path (default: current path)
+        :param secure: limit the cookie to HTTPS connections (default: off).
+        :param httponly: prevents client-side javascript to read this cookie
+            (default: off, requires Python 2.6 or newer).
+        """
         if len(value) > 4096:
             raise ValueError('Cookie value to long.')
 
@@ -139,9 +164,13 @@ class RequestHandler:
             self.cookies[name][key] = val
 
     def clear_cookie(self, key: str, **kwargs):
+        """make the cookie expired
+        """
         pass
 
 class RedirectHandler(RequestHandler):
+    """this handler do nothing, just redirect
+    """
 
     def initialize(self, url: str, permanent=True):
         self._url = url
@@ -152,10 +181,11 @@ class RedirectHandler(RequestHandler):
 
 
 class ErrorHandler(RequestHandler):
-    pass
+    return NotImplemented()
 
 
 class Application:
+    """Application"""
 
     def __init__(self, handlers=None, **settings):
         self._handlers = []
@@ -224,6 +254,7 @@ class Application:
 
     async def _route_request(self, handler_class: type,
                              req: Request, res: Response, args):
+        """"""
         method = req.method
         if handler_class is None:
             raise HTTPError(404)
@@ -264,6 +295,7 @@ class Application:
             res._write('\n' + traceback.format_exc())
 
     def _write_response(self, res, writer: asyncio.StreamWriter):
+        """get chunk from Response object and build http resposne"""
         writer.write(b'HTTP/1.1 %s\r\n' % (tob(touni(res.status_code))))
 
         # write headers
@@ -285,6 +317,7 @@ class Application:
 
     def run(self, *, host: str = '127.0.0.1', port: int = 8080,
             loop_policy: asyncio.AbstractEventLoopPolicy = None):
+        """run"""
         if self.debug:
             autoload()
         if loop_policy:
@@ -294,6 +327,7 @@ class Application:
             asyncio.set_event_loop_policy(loop_policy)
 
         loop = asyncio.get_event_loop()
+        loop.set_debug(True)
         app_log.info('Running on %s:%s [%s](Press CTRL+C to quit)'
                      % ( host, port, 'debug mode' if self.debug else ''))
         loop.create_task(asyncio.start_server(self._execute, host, port))

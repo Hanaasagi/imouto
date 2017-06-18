@@ -186,7 +186,7 @@ class RedirectHandler(RequestHandler):
 
 
 class ErrorHandler(RequestHandler):
-    return NotImplemented()
+    pass
 
 
 class Application:
@@ -333,8 +333,8 @@ class Application:
 
         loop = asyncio.get_event_loop()
         loop.set_debug(True)
-        app_log.info('Running on %s:%s [%s](Press CTRL+C to quit)'
-                     % ( host, port, 'debug mode' if self.debug else ''))
+        app_log.info('Running on %s:%s %s(Press CTRL+C to quit)'
+                     % ( host, port, '[debug mode]' if self.debug else ''))
         loop.create_task(asyncio.start_server(self._execute, host, port))
         loop.run_forever()
         loop.close()

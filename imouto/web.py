@@ -163,10 +163,15 @@ class RequestHandler:
                 val = time.strftime("%a, %d %b %Y %H:%M:%S GMT", val)
             self.cookies[name][key] = val
 
-    def clear_cookie(self, key: str, **kwargs):
+    def clear_cookie(self, key: str, **options):
         """make the cookie expired
+        IE6, IE7, and IE8 does not support “max-age”, while (mostly)
+        all browsers support expires
         """
-        pass
+        options['max_age'] = -1
+        options['expires'] = 0
+        self.set_cookie(key, '', **options)
+
 
 class RedirectHandler(RequestHandler):
     """this handler do nothing, just redirect

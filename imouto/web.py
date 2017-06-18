@@ -305,7 +305,6 @@ class Application:
             res._write(str(e))
         else:
             res.status_code = 500
-            res._write(res.status_code)
         if self.debug:
             res._write('\n' + traceback.format_exc())
 

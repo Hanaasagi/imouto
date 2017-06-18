@@ -18,6 +18,8 @@ class Response:
         self._chunks = []
 
     def _write(self, str_):
+        print(str_)
+        print('*'*10)
         self._chunks.append(tob(str_))
 
     def _write_bytes(self, bytes_):

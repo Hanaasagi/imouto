@@ -3,6 +3,7 @@
 ![Completion](https://img.shields.io/badge/completion-30%25-39C5BB.svg)
 ![Python Version](https://img.shields.io/badge/Python-v3.5-orange.svg)
 [![License](https://img.shields.io/badge/license-BSD3-blue.svg)](https://github.com/Hanaasagi/imouto/blob/master/LICENSE)
+![Platform](https://img.shields.io/badge/platform-Linux-BE84B8.svg)
 ![release](https://img.shields.io/badge/release-dev-EA0032.svg)  
 
 Asynchronous Web API Framework based on `asyncio`  

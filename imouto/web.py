@@ -123,6 +123,16 @@ class RequestHandler:
         self.response.headers['Location'] = url
 
     @property
+    def headers(self):
+        return self.request.headers
+
+    def get_header(self, name: str, default: Any = None):
+        return self.headers.get(name, default)
+
+    def set_header(self, name: str, value: str):
+        self.response.headers[hkey(name)] = hval(value)
+
+    @property
     def cookies(self):
         """request cookies
         """
@@ -148,7 +158,7 @@ class RequestHandler:
         if len(value) > 4096:
             raise ValueError('Cookie value to long.')
 
-        self.cookies[name] = value
+        self.response.cookies[name.strip()] = hval(value)
 
         for key, value in options.items():
             key = hkey(key)
@@ -161,7 +171,7 @@ class RequestHandler:
                 elif isinstance(value, (int, float)):
                     value = time.gmtime(value)
                 value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
-            self.cookies[name][key] = value
+            self.response.cookies[name][key] = value
 
     def clear_cookie(self, key: str, **options):
         """make the cookie expired

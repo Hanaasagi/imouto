@@ -4,14 +4,20 @@ from collections import UserDict, Iterable
 
 
 def trim_keys(dict_):
+    """remove dict keys with leading and trailing whitespace
+    """
     return {k.strip(): v for k, v in dict_.items()}
 
 
 def tob(s, enc='utf8'):
+    """convert to bytes
+    """
     return s.encode(enc) if isinstance(s, str) else bytes(s)
 
 
 def touni(s, enc='utf8', err='strict'):
+    """convert to unicode
+    """
     return s.decode(enc, err) if isinstance(s, bytes) else str(s)
 
 
@@ -110,5 +116,3 @@ class HeaderDict(MultiDict):
 
     def getall(self, key):
         return super().getall(hkey(key))
-
-

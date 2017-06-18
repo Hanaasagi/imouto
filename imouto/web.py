@@ -150,18 +150,18 @@ class RequestHandler:
 
         self.cookies[name] = value
 
-        for key, val in options.items():
+        for key, value in options.items():
             key = hkey(key)
             if key == 'max_age':
-                if isinstance(val, timedelta):
-                    val = val.seconds + val.days * 24 * 3600
+                if isinstance(value, timedelta):
+                    value = value.seconds + value.days * 24 * 3600
             if key == 'expires':
-                if isinstance(val, (date_t, datetime)):
-                    val = val.timetuple()
-                elif isinstance(val, (int, float)):
-                    val = time.gmtime(val)
-                val = time.strftime("%a, %d %b %Y %H:%M:%S GMT", val)
-            self.cookies[name][key] = val
+                if isinstance(value, (date_t, datetime)):
+                    value = value.timetuple()
+                elif isinstance(value, (int, float)):
+                    value = time.gmtime(value)
+                value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
+            self.cookies[name][key] = value
 
     def clear_cookie(self, key: str, **options):
         """make the cookie expired

@@ -5,6 +5,8 @@ from collections import UserDict, Iterable
 
 def trim_keys(dict_):
     """remove dict keys with leading and trailing whitespace
+    >>> trim_keys({' name': 'value'}) == {'name': 'value'}
+    True
     """
     return {k.strip(): v for k, v in dict_.items()}
 
@@ -116,3 +118,8 @@ class HeaderDict(MultiDict):
 
     def getall(self, key):
         return super().getall(hkey(key))
+
+
+if __name__ == '__main__':
+    import doctest
+    doctest.testmod(verbose=False)

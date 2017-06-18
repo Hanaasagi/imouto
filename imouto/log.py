@@ -1,5 +1,4 @@
 import sys
-import ctypes
 import logging
 import logging.config
 
@@ -89,7 +88,7 @@ class ColorHandler(ColorizingStreamHandler):
         }
 
 
-CONFIG = {
+DEFAULT_LOGGING = {
     'version': 1,
     'handlers': {
         'simple': {
@@ -125,12 +124,12 @@ CONFIG = {
     },
 }
 
-logging.config.dictConfig(CONFIG)
 # Logger objects
 access_log = logging.getLogger("imouto.access")
 app_log = logging.getLogger("imouto.application")
 
 if __name__ == '__main__':
+    logging.config.dictConfig(DEFAULT_LOGGING)
     app_log.debug("Hello world")     # output should be in blue
     app_log.info("Hello world")      # output should be in green
     app_log.warn("Hello world")      # output should be in yellow

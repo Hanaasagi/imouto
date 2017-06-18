@@ -2,13 +2,14 @@ import re
 import time
 import asyncio
 import traceback
+import logging.config
 from collections import Mapping
 from datetime import date as date_t, datetime, timedelta
 from http.client import responses as http_status
 from http.cookies import SimpleCookie
 from imouto import Request, Response
 from imouto.autoload import autoload
-from imouto.log import access_log, app_log
+from imouto.log import access_log, app_log, DEFAULT_LOGGING
 from imouto.httputils import hkey, hval, tob, touni
 from httptools import HttpRequestParser
 
@@ -330,10 +331,12 @@ class Application:
         writer.write_eof()
 
     def run(self, *, host: str = '127.0.0.1', port: int = 8080,
-            loop_policy: asyncio.AbstractEventLoopPolicy = None):
+            loop_policy: asyncio.AbstractEventLoopPolicy = None,
+            log_config: dict = DEFAULT_LOGGING):
         """run"""
         if self.debug:
             autoload()
+        logging.config.dictConfig(DEFAULT_LOGGING)
         if loop_policy:
             # For example `uvloop` can improve performance significantly
             # import uvloop
@@ -344,7 +347,14 @@ class Application:
         loop.set_debug(True)
         app_log.info('Running on %s:%s %s(Press CTRL+C to quit)'
                      % ( host, port, '[debug mode]' if self.debug else ''))
-        loop.create_task(asyncio.start_server(self._execute, host, port))
-        loop.run_forever()
+        coro = asyncio.start_server(self._execute, host, port, loop=loop)
+        server = loop.run_until_complete(coro)
+        # loop.create_task(asyncio.start_server(self._execute, host, port))
+        try:
+            loop.run_forever()
+        except KeyboardInterrupt:
+            pass
+        server.close()
+        loop.run_until_complete(server.wait_closed())
         loop.close()
 

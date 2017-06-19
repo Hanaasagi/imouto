@@ -30,6 +30,14 @@ app.add_route('/', MainHandler)
 app.run(debug=True)
 ```
 
+### Features
+
+#### 1) magic route
+
+```Python
+GET / '' > hello   # it will match '/' call `hello`
+POST / 'mahou' > shoujo  # it will match '/mahou' and call `shoujo` 
+```
 
 ### Documentation
 

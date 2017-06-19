@@ -35,8 +35,8 @@ app.run(debug=True)
 #### 1) magic route
 
 ```Python
-GET / '' > hello   # it will match '/' call `hello`
-POST / 'mahou' > shoujo  # it will match '/mahou' and call `shoujo` 
+GET / '/' > hello   # it will match '/' call `hello`
+POST / '/mahou' > shoujo  # it will match '/mahou' and call `shoujo` 
 ```
 
 ### Documentation

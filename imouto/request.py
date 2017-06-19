@@ -48,8 +48,11 @@ class Request:
             self.cookies = MultiDict(**cookies)
 
     def _parse_cookie(self, value):
+        # cookies will be {str: list}
         cookies = trim_keys(parse.parse_qs(value))
-        return MultiDict(cookies)
+        md = MultiDict()
+        md.data = cookies
+        return md
 
     def _parse_form(self, body_stream):
         env = {'REQUEST_METHOD': 'POST'}
@@ -64,15 +67,15 @@ class Request:
 
     def _parse_body(self, body_stream):
         content_type = self.headers.get('Content-Type', '')
-        if content_type == 'application/json':
+        if content_type.startswith('application/json'):
             data = body_stream.getvalue().decode()
             self.form = json.loads(data)
         elif content_type.startswith('multipart/form-data'):
             self.form = self._parse_form(body_stream)
-        elif content_type == 'application/x-www-form-urlencoded':
+        elif content_type.startswith('application/x-www-form-urlencoded'):
             data = body_stream.getvalue().decode()
-            self.form = MultiDict(parse.parse_qs(data))
-
+            self.form = MultiDict()
+            self.form.data = parse.parse_qs(data)
         body_stream.seek(0)
 
     def on_url(self, url: bytes):

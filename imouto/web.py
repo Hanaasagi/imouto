@@ -123,6 +123,16 @@ class RequestHandler:
             self.response.status_code = 302
         self.response.headers['Location'] = url
 
+    def get_query_argument(self, name: str, default: Any = None):
+        """get parameter from query string
+        """
+        return self.request.query.get(name, default)
+
+    def get_body_argument(self, name: str, default: Any = None):
+        """get argument from request body
+        """
+        return self.request.form.get(name, default)
+
     @property
     def headers(self):
         return self.request.headers

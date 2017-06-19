@@ -40,7 +40,7 @@ class MultiDict(UserDict):
     """ This dict stores multiple values per key, but behaves exactly like a
         normal dict in that it returns only the newest value for any given key.
         There are special methods available to access the full list of values.
-    >>> d = MultiDict(a=[0], b=[1])
+    >>> d = MultiDict(a=0, b=1)
     >>> d == {'a': [0], 'b': [1]}
     True
     >>> len(d)
@@ -58,8 +58,8 @@ class MultiDict(UserDict):
     """
 
     def __init__(self, *a, **k):
-        # self.data = dict((k, [v]) for (k, v) in dict(*a, **k).items())
-        self.data = dict(*a, **k)
+        self.data = dict((k, [v]) for (k, v) in dict(*a, **k).items())
+        # self.data = dict(*a, **k)
 
     def __getitem__(self, key):
         return self.data[key][-1]

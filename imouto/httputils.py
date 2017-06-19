@@ -58,8 +58,10 @@ class MultiDict(UserDict):
     """
 
     def __init__(self, *a, **k):
-        self.data = dict((k, [v]) for (k, v) in dict(*a, **k).items())
-        # self.data = dict(*a, **k)
+        """TODO
+        """
+        # self.data = {k: [v] for (k, v) in dict(*a, **k).items()}
+        self.data = dict(*a, **k)
 
     def __getitem__(self, key):
         return self.data[key][-1]
@@ -101,6 +103,11 @@ class MultiDict(UserDict):
 class HeaderDict(MultiDict):
     """ A case-insensitive version of :class:`MultiDict` that defaults to
         replace the old value instead of appending it. """
+
+    def __init__(self, *a, **k):
+        """TODO
+        """
+        self.data = {k: [v] for (k, v) in dict(*a, **k).items()}
 
     def __contains__(self, key):
         return super().__contains__(hkey(key))

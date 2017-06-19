@@ -1,3 +1,4 @@
+import re
 from imouto.web import Application
 
 class Slot:
@@ -11,12 +12,16 @@ class Route:
         self.path = path
 
     def __gt__(self, handler):
-        o = Slot()
+        # TODO
+        app = Application()
+        route = re.sub('{([-_a-zA-Z]+)}', '(?P<\g<1>>[^/?]+)', self.path)
+        route += '$'
+        compiled = re.compile(route)
+        o = app._handlers.get(compiled, Slot())
         setattr(o, 'is_magic_route', True)
         setattr(o, self.method.lower(), handler)
         # Application is singleton
-        app = Application()
-        app.add_handlers([(self.path, o)])
+        app._handlers[compiled] = o
 
 
 class HTTPMethod(type):

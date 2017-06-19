@@ -3,7 +3,7 @@ import time
 import asyncio
 import traceback
 import logging.config
-from collections import Mapping
+from collections import Mapping, OrderedDict
 from datetime import date as date_t, datetime, timedelta
 from http.client import responses as http_status
 from http.cookies import SimpleCookie
@@ -222,7 +222,7 @@ class Application(metaclass=Singleton):
     """Application"""
 
     def __init__(self, handlers=None, **settings):
-        self._handlers = []
+        self._handlers = OrderedDict()
         self.settings = settings
 
         if handlers:
@@ -230,22 +230,27 @@ class Application(metaclass=Singleton):
 
         self.debug = settings.get('debug', False)
 
+
     def add_handlers(self, handlers: List[Tuple[str, str]]):
         """Append handlers to handler list
         """
         # '.*$' will always match, so it will be last one
         last_one = None
-        if self._handlers and self._handlers[-1][0] == r'.*$':
-            last_one = self._handlers.pop()
+        # if self._handlers and self._handlers[-1][0] == r'.*$':
+        #     last_one = self._handlers.popitem()
+        if self._handlers and r'.*$' in self._handlers.keys():
+            last_one = self._handlers.pop(r'.*$')
 
         for route, handler in handlers:
             route = re.sub('{([-_a-zA-Z]+)}', '(?P<\g<1>>[^/?]+)', route)
             route += '$'
             compiled = re.compile(route)
-            self._handlers.append((compiled, handler))
+            # self._handlers.append((compiled, handler))
+            self._handlers[compiled] = handler
 
         if last_one:
-            self._handlers.appned(last_one)
+            # self._handlers.appned(last_one)
+            self._handlers[last_one[0]] = last_one[1]
 
 
     def _find_handler(self, path: str):
@@ -253,7 +258,7 @@ class Application(metaclass=Singleton):
         if nothing mathed but having default handler, use default
         otherwise 404 Not Found
         """
-        for route, handler_class in self._handlers:
+        for route, handler_class in self._handlers.items():
             match = route.match(path)
             if match:
                 return handler_class, match.groupdict()

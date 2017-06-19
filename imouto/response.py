@@ -14,16 +14,16 @@ class Response:
         ])
         self.cookies = SimpleCookie()
 
-    def _clear(self):
+    def clear(self):
         self._chunks = []
 
-    def _write(self, str_):
+    def write(self, str_):
         self._chunks.append(tob(str_))
 
-    def _write_bytes(self, bytes_):
+    def write_bytes(self, bytes_):
         self._chunks.append(bytes_)
 
-    def _write_json(self, data):
+    def write_json(self, data):
         if issubclass(type(data), Mapping):
             data_str = json.dumps(data)
         elif hasattr(data, '_asdict'):

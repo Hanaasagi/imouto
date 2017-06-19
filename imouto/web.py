@@ -105,13 +105,13 @@ class RequestHandler:
         chunk may be other types for example None
         so call their `__str__` method to get string epresentation
         """
-        self.response._write(chunk.__str__())
+        self.response.write(chunk.__str__())
 
     def write_json(self, data: Any):
         """data will converted to json and write
         """
         # need enclosing try-except
-        self.response._write_json(data)
+        self.response.write_json(data)
 
     def redirect(self, url: str, permanent=False):
         """HTTP Redirect
@@ -210,7 +210,15 @@ class ErrorHandler(RequestHandler):
     pass
 
 
-class Application:
+class Singleton(type):
+    _instances = {}
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class Application(metaclass=Singleton):
     """Application"""
 
     def __init__(self, handlers=None, **settings):
@@ -254,7 +262,7 @@ class Application:
             handler_class = self.settings['default_handler']
             return handler_class, {}
 
-        # attenton !!!
+        # attenton !!! TODO
         return ErrorHandler, None
 
 
@@ -285,8 +293,11 @@ class Application:
         if handler_class is None:
             raise HTTPError(404)
 
-        handler = handler_class(self, req, res)
-        await getattr(handler, method.lower())(**args)
+        if hasattr(handler_class, 'is_magic_route') and handler_class.is_magic_route:
+            await getattr(handler_class, method.lower())(req, res, **args)
+        else:
+            handler = handler_class(self, req, res)
+            await getattr(handler, method.lower())(**args)
 
     async def _execute(self, request_reader: asyncio.StreamReader,
                        response_writer: asyncio.StreamWriter):
@@ -298,7 +309,6 @@ class Application:
                 await self._route_request(handler_class, req, res, args)
             except HTTPError as e:
                 self._handle_error(res, e)
-
         except Exception as e:
             self._handle_error(res, e)
 
@@ -310,18 +320,20 @@ class Application:
         response_writer.close()
 
     def _handle_error(self, res: Response, e: Exception):
-        res._clear()
+        res.clear()
         if isinstance(e, HTTPError):
             res.status_code = e.status_code
-            res._write(str(e))
+            res.write(str(e))
         else:
             res.status_code = 500
         if self.debug:
-            res._write('\n' + traceback.format_exc())
+            res.write('\n' + traceback.format_exc())
 
     def _write_response(self, res, writer: asyncio.StreamWriter):
         """get chunk from Response object and build http resposne"""
-        writer.write(b'HTTP/1.1 %s\r\n' % (tob(touni(res.status_code))))
+        writer.write(b'HTTP/1.1 %b %b\r\n' % (
+                        tob(touni(res.status_code)),
+                        tob(http_status.get(res.status_code, 'Unknown'))))
 
         # write headers
         if 'Content-Length' not in res.headers:
@@ -346,7 +358,7 @@ class Application:
         """run"""
         if self.debug:
             autoload()
-        logging.config.dictConfig(DEFAULT_LOGGING)
+        logging.config.dictConfig(log_config)
         if loop_policy:
             # For example `uvloop` can improve performance significantly
             # import uvloop

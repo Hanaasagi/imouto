@@ -1,5 +1,6 @@
 import asyncio
 from imouto.web import Application, RequestHandler
+from imouto.dslroute import GET
 
 class MainHandler(RequestHandler):
 
@@ -53,4 +54,10 @@ app = Application([
     (r'/argument/', ArgumentHandler),
     (r'/header', HeaderTestHandler),
     (r'/api/', JsonHandler)], debug=True)
+
+async def test(request, resposne):
+    resposne.write("it's magic route")
+
+GET / '/magic/' > test
+
 app.run()

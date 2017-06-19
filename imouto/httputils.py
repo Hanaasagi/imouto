@@ -46,7 +46,7 @@ class MultiDict(UserDict):
     """ This dict stores multiple values per key, but behaves exactly like a
         normal dict in that it returns only the newest value for any given key.
         There are special methods available to access the full list of values.
-    >>> d = MultiDict(a=0, b=1)
+    >>> d = MultiDict(a=[0], b=[1])
     >>> d == {'a': [0], 'b': [1]}
     True
     >>> len(d)
@@ -108,8 +108,11 @@ class MultiDict(UserDict):
 
 class HeaderDict(MultiDict):
     """ A case-insensitive version of :class:`MultiDict` that defaults to
-        replace the old value instead of appending it. """
-
+        replace the old value instead of appending it.
+    >>> d = HeaderDict(a=0, b=1)
+    >>> d == {'a': [0], 'b': [1]}
+    True
+    """
     def __init__(self, *a, **k):
         """TODO
         """

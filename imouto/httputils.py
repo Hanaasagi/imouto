@@ -14,13 +14,19 @@ def trim_keys(dict_):
 def tob(s, enc='utf8'):
     """convert to bytes
     """
-    return s.encode(enc) if isinstance(s, str) else bytes(s)
+    try:
+        return s.encode(enc)
+    except AttributeError:
+        return str(s).encode(enc)
 
 
 def touni(s, enc='utf8', err='strict'):
     """convert to unicode
     """
-    return s.decode(enc, err) if isinstance(s, bytes) else str(s)
+    try:
+        return s.decode(enc, err)
+    except AttributeError:
+        return str(s)
 
 
 def hkey(key):

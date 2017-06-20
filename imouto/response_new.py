@@ -1,4 +1,4 @@
-from imouto import tob, touni
+from imouto.util import tob, touni
 
 
 class BaseHTTPResponse:

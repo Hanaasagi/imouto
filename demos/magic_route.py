@@ -10,7 +10,7 @@ async def hello_world_post(request, resposne):
     resposne.write("Hello World, it'is post")
 
 
-GET / '/' > hello_world_get
+GET  / '/' > hello_world_get
 POST / '/' > hello_world_post
 
 app = Application()

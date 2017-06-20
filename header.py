@@ -10,7 +10,7 @@ class HeaderDemo(RequestHandler):
             self.headers['Accept-Encoding']))
         self.set_header('access-token', '123456')
         self.set_header('secure-token',
-                        create_secure_value('name', 'value', secret='root'))
+                            create_secure_value( 'value', secret='root'))
 
-app = Application([(r'/', HeaderDemo)])
+app = Application([(r'/', HeaderDemo)], debug=True)
 app.run()

@@ -1,7 +1,7 @@
 import json
 from collections import Mapping
 from http.cookies import SimpleCookie
-from imouto.httputils import HeaderDict, tob
+from imouto.util import HeaderDict, tob
 
 
 class Response:

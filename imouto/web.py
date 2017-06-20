@@ -10,7 +10,7 @@ from http.cookies import SimpleCookie
 from imouto import Request, Response
 from imouto.autoload import autoload
 from imouto.log import access_log, app_log, DEFAULT_LOGGING
-from imouto.httputils import hkey, hval, tob, touni
+from imouto.util import hkey, hval, tob, touni, Singleton
 from httptools import HttpRequestParser
 
 # for type check
@@ -206,16 +206,9 @@ class RedirectHandler(RequestHandler):
         self.redirect(self._url, permanent=self._permanent)
 
 
+# Maybe it make no sense
 class ErrorHandler(RequestHandler):
     pass
-
-
-class Singleton(type):
-    _instances = {}
-    def __call__(cls, *args, **kwargs):
-        if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
-        return cls._instances[cls]
 
 
 class Application(metaclass=Singleton):
@@ -268,7 +261,8 @@ class Application(metaclass=Singleton):
             return handler_class, {}
 
         # attenton !!! TODO
-        return ErrorHandler, None
+        return None, None
+        # return ErrorHandler, None
 
 
     async def _parse_request(self, request_reader: asyncio.StreamReader,
@@ -291,9 +285,10 @@ class Application(metaclass=Singleton):
         req.method = touni(parser.get_method()).upper()
         return req
 
-    async def _route_request(self, handler_class: type,
-                             req: Request, res: Response, args):
+    async def _execute(self, handler_class: type,
+                             req: Request, args):
         """"""
+        res = Response()
         method = req.method
         if handler_class is None:
             raise HTTPError(404)
@@ -303,19 +298,19 @@ class Application(metaclass=Singleton):
         else:
             handler = handler_class(self, req, res)
             await getattr(handler, method.lower())(**args)
+        return res
 
-    async def _execute(self, request_reader: asyncio.StreamReader,
+    async def __call__(self, request_reader: asyncio.StreamReader,
                        response_writer: asyncio.StreamWriter):
-        res = Response()
         try:
             req = await self._parse_request(request_reader, response_writer)
             handler_class, args = self._find_handler(req.path)
             try:
-                await self._route_request(handler_class, req, res, args)
+                res = await self._execute(handler_class, req, args)
             except HTTPError as e:
-                self._handle_error(res, e)
+                res = self._handle_error(e)
         except Exception as e:
-            self._handle_error(res, e)
+            res = self._handle_error(e)
 
         # output the access log)
         log(status_code=res.status_code, method=req.method,
@@ -324,15 +319,20 @@ class Application(metaclass=Singleton):
         await response_writer.drain()
         response_writer.close()
 
-    def _handle_error(self, res: Response, e: Exception):
+    def _handle_error(self, e: Exception):
+        res = Response()
+        # clear the response body when there is an exception
         res.clear()
         if isinstance(e, HTTPError):
             res.status_code = e.status_code
             res.write(str(e))
         else:
             res.status_code = 500
+
+        # only debug mode should show traceback
         if self.debug:
             res.write('\n' + traceback.format_exc())
+        return res
 
     def _write_response(self, res, writer: asyncio.StreamWriter):
         """get chunk from Response object and build http resposne"""
@@ -374,9 +374,10 @@ class Application(metaclass=Singleton):
         loop.set_debug(True)
         app_log.info('Running on %s:%s %s(Press CTRL+C to quit)'
                      % ( host, port, '[debug mode]' if self.debug else ''))
-        coro = asyncio.start_server(self._execute, host, port, loop=loop)
+        # mypy doesn't know self mean, use self.__call__ explicitly
+        coro = asyncio.start_server(self.__call__, host, port, loop=loop)
         server = loop.run_until_complete(coro)
-        # loop.create_task(asyncio.start_server(self._execute, host, port))
+        # loop.create_task(asyncio.start_server(self.__call__, host, port))
         try:
             loop.run_forever()
         except KeyboardInterrupt:

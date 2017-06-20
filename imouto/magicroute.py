@@ -1,6 +1,7 @@
 import re
 from imouto.web import Application
 
+
 class Slot:
     pass
 
@@ -12,7 +13,7 @@ class Route:
         self.path = path
 
     def __gt__(self, handler):
-        # TODO
+        # TODO refactoring the ugly code, try to replace the Slot
         app = Application()
         route = re.sub('{([-_a-zA-Z]+)}', '(?P<\g<1>>[^/?]+)', self.path)
         route += '$'

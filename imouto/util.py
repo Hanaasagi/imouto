@@ -17,7 +17,7 @@ def tob(s, enc='utf8'):
     try:
         return s.encode(enc)
     except AttributeError:
-        return str(s).encode(enc)
+        return bytes(s)
 
 
 def touni(s, enc='utf8', err='strict'):
@@ -40,6 +40,15 @@ def hval(value):
     if '\n' in value or '\r' in value or '\0' in value:
         raise ValueError("Header value must not contain control characters: %r" % value)
     return value
+
+
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
 
 
 class MultiDict(UserDict):

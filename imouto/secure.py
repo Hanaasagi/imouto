@@ -4,19 +4,21 @@ import base64
 import hashlib
 from imouto.util import tob, touni
 
+# for type checking
+from typing import Iterable, Union
 
-def create_secure_value(name, value, *, secret):
+def create_secure_value(name: str, value: str, *, secret: str) -> bytes:
     """create secure value
     will be following format
     b'base64 value|timestamp|signature'
     """
     timestamp = tob(str(int(time.time())))
-    value = base64.b64encode(tob(value))
-    signature = _generate_signature(secret, name, value, timestamp)
-    return  b"|".join((value, timestamp, signature))
+    value_b64 = base64.b64encode(tob(value))
+    signature = _generate_signature(secret, name, value_b64, timestamp)
+    return  b"|".join([value_b64, timestamp, signature])
 
 
-def _generate_signature(secret, *parts):
+def _generate_signature(secret: str, *parts: Iterable) -> bytes:
     """generate signature using sha1
     """
     hash_ = hmac.new(tob(secret), digestmod=hashlib.sha1)
@@ -26,7 +28,8 @@ def _generate_signature(secret, *parts):
     return result
 
 
-def verify_secure_value(name, value, *, secret):
+def verify_secure_value(name: str, value: Union[str, bytes], *,
+                        secret: str) -> Union[str, None]:
     """verify the signature
     if correct return the value after base64 decode
     else return None

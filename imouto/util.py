@@ -1,6 +1,35 @@
+import re
+import urllib.parse
+from string import ascii_letters, digits
 from collections import UserDict, Iterable
 
 """Some utility functions and classes"""
+
+
+def url_encode(value, plus=True):
+    """urlencode
+    if plus is True ' ' will convert to '+'
+    otherwise ' ' will convert to '%20'
+    >>> url_encode('www.google.com.hk/#safe=strict&q=python3 url escape')
+    'www.google.com.hk%2F%23safe%3Dstrict%26q%3Dpython3+url+escape'
+    >>> url_encode('www.google.com.hk/#safe=strict&q=python3 url escape', plus=False)
+    'www.google.com.hk/%23safe%3Dstrict%26q%3Dpython3%20url%20escape'
+    """
+    quote = urllib.parse.quote_plus if plus else urllib.parse.quote
+    return quote(tob(value))
+
+
+def re_unescape(s):
+    _re_unescape_pattern = re.compile(r'\\(.)', re.DOTALL)
+    _alphanum = list(ascii_letters + digits)
+
+    def _re_unescape_replacement(match):
+        group = match.group(1)
+        if group[0] in _alphanum:
+            raise ValueError("cannot unescape '\\\\%s'" % group[0])
+        return group
+
+    return _re_unescape_pattern.sub(_re_unescape_replacement, s)
 
 
 def trim_keys(dict_):

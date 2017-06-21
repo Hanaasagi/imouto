@@ -1,9 +1,11 @@
 import re
 from imouto.web import Application
+from imouto.route import URLSpec
 
 
 class MagicRoute:
-    pass
+    __slots__ = ['_magic_route', 'get', 'post', 'head', 'put',
+                 'patch', 'trace', 'options', 'connect', 'delete']
 
 
 class Route:
@@ -15,14 +17,14 @@ class Route:
     def __gt__(self, handler):
         # TODO refactoring the ugly code, try to replace the Slot
         app = Application()
-        route = re.sub('{([-_a-zA-Z]+)}', '(?P<\g<1>>[^/?]+)', self.path)
-        route += '$'
-        compiled = re.compile(route)
-        o = app._handlers.get(compiled, MagicRoute())
-        setattr(o, '_magic_route', True)
-        setattr(o, self.method.lower(), handler)
-        # Application is singleton
-        app._handlers[compiled] = o
+        if self.path in app._handlers:
+            setattr(app._handlers[self.path].handler_class, self.method.lower(), handler)
+        else:
+            obj = MagicRoute()
+            setattr(obj, '_magic_route', True)
+            setattr(obj, self.method.lower(), handler)
+            # Application is singleton
+            app._handlers[self.path] = URLSpec(self.path, obj)
 
 
 class HTTPMethod(type):

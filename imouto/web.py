@@ -8,6 +8,7 @@ from datetime import date as date_t, datetime, timedelta
 from http.cookies import SimpleCookie
 from imouto import Request, Response
 from imouto.autoload import autoload
+from imouto.route import URLSpec
 from imouto.log import access_log, app_log, DEFAULT_LOGGING
 from imouto.util import hkey, hval, tob, touni, Singleton
 from httptools import HttpRequestParser
@@ -225,23 +226,8 @@ class Application(metaclass=Singleton):
     def add_handlers(self, handlers: List[Tuple[str, str]]):
         """Append handlers to handler list
         """
-        # '.*$' will always match, so it will be last one
-        last_one = None
-        # if self._handlers and self._handlers[-1][0] == r'.*$':
-        #     last_one = self._handlers.popitem()
-        if self._handlers and r'.*$' in self._handlers.keys():
-            last_one = self._handlers.pop(r'.*$')
-
         for route, handler in handlers:
-            route = re.sub('{([-_a-zA-Z]+)}', '(?P<\g<1>>[^/?]+)', route)
-            route += '$'
-            compiled = re.compile(route)
-            # self._handlers.append((compiled, handler))
-            self._handlers[compiled] = handler
-
-        if last_one:
-            # self._handlers.appned(last_one)
-            self._handlers[last_one[0]] = last_one[1]
+            self._handlers[route] = URLSpec(route, handler)
 
 
     def _find_handler(self, path: str):
@@ -249,12 +235,20 @@ class Application(metaclass=Singleton):
         if nothing mathed but having default handler, use default
         otherwise 404 Not Found
         """
-        for route, handler_class in self._handlers:
-            match = route.match(path)
-            if match:
-                return handler_class, match.groupdict()
 
-        return self.default_handler, {}
+        path_args, path_kwargs = [], {}
+        for spec in self._handlers:
+            match = spec.regex.match(path)
+            if match:
+                handler_class = spec.handler_class
+                handler_kwargs = spec.kwargs
+                if spec.regex.groups:
+                    if spec.regex.groupindex:
+                        path_kwargs = match.groupdict()
+                    else:
+                        path_args = match.groups()
+                return handler_class, path_args, path_kwargs
+        return self.default_handler, path_args, path_kwargs
 
 
     async def _parse_request(self, request_reader: asyncio.StreamReader,
@@ -278,27 +272,27 @@ class Application(metaclass=Singleton):
         return req
 
     async def _execute(self, handler_class: type,
-                             req: Request, args):
+                             req: Request, args, kwargs):
         """"""
-        res = Response()
         method = req.method
         if handler_class is None:
             raise HTTPError(404)
 
+        res = Response()
         if hasattr(handler_class, '_magic_route') and handler_class._magic_route:
-            await getattr(handler_class, method.lower())(req, res, **args)
+            await getattr(handler_class, method.lower())(req, res, *args, **kwargs)
         else:
             handler = handler_class(self, req, res)
-            await getattr(handler, method.lower())(**args)
+            await getattr(handler, method.lower())(*args, **kwargs)
         return res
 
     async def __call__(self, request_reader: asyncio.StreamReader,
                        response_writer: asyncio.StreamWriter):
         try:
             req = await self._parse_request(request_reader, response_writer)
-            handler_class, args = self._find_handler(req.path)
+            handler_class, args, kwargs = self._find_handler(req.path)
             try:
-                res = await self._execute(handler_class, req, args)
+                res = await self._execute(handler_class, req, args, kwargs)
             except HTTPError as e:
                 res = self._handle_error(e)
         except Exception as e:
@@ -330,18 +324,18 @@ class Application(metaclass=Singleton):
         writer.write(res.output())
         writer.write_eof()
 
-    def convert(self):
+    def _prepare(self):
         """convert self._handlers to list"""
         # I use orderdict to for magicroute but iter a orderdict is too slow
         # so convert it to list before app run
         if isinstance(self._handlers, OrderedDict):
-            self._handlers = list(self._handlers.items())
+            self._handlers = list(self._handlers.values())
 
 
     def run(self, *, host: str = '127.0.0.1', port: int = 8080,
             loop_policy: asyncio.AbstractEventLoopPolicy = None,
             log_config: dict = DEFAULT_LOGGING):
-        self.convert()
+        self._prepare()
         """run"""
         if self.debug:
             autoload()

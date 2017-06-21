@@ -54,7 +54,7 @@ class HelloHandler(RequestHandler):
 
 app = Application([
     (r'/', HelloHandler),
-    (r'/{name}', MainHandler),
+    (r'/(\d+)', MainHandler),
     (r'/redirect/', RHandler),
     (r'/bugs/', BugHandler),
     (r'/argument/', ArgumentHandler),

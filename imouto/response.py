@@ -7,9 +7,9 @@ from http.client import responses as ALL_STATUS
 
 class Response:
 
-    def __init__(self):
-        self.version = '1.1'
-        self.status_code = 200
+    def __init__(self, version='1.1', status_code=200):
+        self.version = version
+        self.status_code = status_code
         self._chunks = []
         self.headers = HeaderDict([
             ('Content-Type', 'text/html')

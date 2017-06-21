@@ -2,7 +2,7 @@ import re
 from imouto.web import Application
 
 
-class Slot:
+class MagicRoute:
     pass
 
 
@@ -18,8 +18,8 @@ class Route:
         route = re.sub('{([-_a-zA-Z]+)}', '(?P<\g<1>>[^/?]+)', self.path)
         route += '$'
         compiled = re.compile(route)
-        o = app._handlers.get(compiled, Slot())
-        setattr(o, 'is_magic_route', True)
+        o = app._handlers.get(compiled, MagicRoute())
+        setattr(o, '_magic_route', True)
         setattr(o, self.method.lower(), handler)
         # Application is singleton
         app._handlers[compiled] = o

@@ -47,9 +47,15 @@ class BugHandler(RequestHandler):
     async def get(self):
         raise Exception('I hate bugs...')
 
+class HelloHandler(RequestHandler):
+
+    async def get(self):
+        self.write('Hello World')
+
 app = Application([
+    (r'/', HelloHandler),
     (r'/{name}', MainHandler),
-    (r'/', RHandler),
+    (r'/redirect/', RHandler),
     (r'/bugs/', BugHandler),
     (r'/argument/', ArgumentHandler),
     (r'/header', HeaderTestHandler),

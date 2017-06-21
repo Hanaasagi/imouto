@@ -251,7 +251,7 @@ class Application(metaclass=Singleton):
         if nothing mathed but having default handler, use default
         otherwise 404 Not Found
         """
-        for route, handler_class in self._handlers.items():
+        for route, handler_class in self._handlers:
             match = route.match(path)
             if match:
                 return handler_class, match.groupdict()
@@ -293,7 +293,7 @@ class Application(metaclass=Singleton):
         if handler_class is None:
             raise HTTPError(404)
 
-        if hasattr(handler_class, 'is_magic_route') and handler_class.is_magic_route:
+        if hasattr(handler_class, '_magic_route') and handler_class._magic_route:
             await getattr(handler_class, method.lower())(req, res, **args)
         else:
             handler = handler_class(self, req, res)
@@ -336,30 +336,21 @@ class Application(metaclass=Singleton):
 
     def _write_response(self, res, writer: asyncio.StreamWriter):
         """get chunk from Response object and build http resposne"""
-        writer.write(b'HTTP/1.1 %b %b\r\n' % (
-                        tob(touni(res.status_code)),
-                        tob(http_status.get(res.status_code, 'Unknown'))))
-
-        # write headers
-        if 'Content-Length' not in res.headers:
-            res.headers['Content-Length'] = touni(sum(len(_) for _ in res._chunks))
-
-        for key, value in res.headers.items():
-            writer.write(tob(key) + b': ' + tob(touni(value)) + b'\r\n')
-
-        if res.cookies:
-            writer.write(tob(res.cookies.output()) + b'\r\n')
-
-        # split resposne headers and body
-        writer.write(b'\r\n')
-
-        # write http body
-        writer.writelines(res._chunks)
+        writer.write(res.output())
         writer.write_eof()
+
+    def convert(self):
+        """convert self._handlers to list"""
+        # I use orderdict to for magicroute but iter a orderdict is too slow
+        # so convert it to list before app run
+        if isinstance(self._handlers, OrderedDict):
+            self._handlers = list(self._handlers.items())
+
 
     def run(self, *, host: str = '127.0.0.1', port: int = 8080,
             loop_policy: asyncio.AbstractEventLoopPolicy = None,
             log_config: dict = DEFAULT_LOGGING):
+        self.convert()
         """run"""
         if self.debug:
             autoload()

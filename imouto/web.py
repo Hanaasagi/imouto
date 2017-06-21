@@ -5,7 +5,6 @@ import traceback
 import logging.config
 from collections import Mapping, OrderedDict
 from datetime import date as date_t, datetime, timedelta
-from http.client import responses as http_status
 from http.cookies import SimpleCookie
 from imouto import Request, Response
 from imouto.autoload import autoload
@@ -29,11 +28,9 @@ class HTTPError(Exception):
             self.log_message = log_message.replace('%', '%%')
 
     def __str__(self):
-        message = "HTTP %d: %s" % (self.status_code,
-                                   http_status.get(self.status_code, 'Unknown'))
         if self.log_message:
             return "%s (%s)" % (message, self.log_message % self.args)
-        return message
+        return ''
 
 def log(status_code: int, method: str, path: str, query_string: str) -> None:
     """logging the access message
@@ -222,6 +219,7 @@ class Application(metaclass=Singleton):
             self.add_handlers(handlers)
 
         self.debug = settings.get('debug', False)
+        self.default_handler = settings.get('default_handler', None)
 
 
     def add_handlers(self, handlers: List[Tuple[str, str]]):
@@ -256,13 +254,7 @@ class Application(metaclass=Singleton):
             if match:
                 return handler_class, match.groupdict()
 
-        if self.settings.get('default_handler'):
-            handler_class = self.settings['default_handler']
-            return handler_class, {}
-
-        # attenton !!! TODO
-        return None, None
-        # return ErrorHandler, None
+        return self.default_handler, {}
 
 
     async def _parse_request(self, request_reader: asyncio.StreamReader,
@@ -328,10 +320,9 @@ class Application(metaclass=Singleton):
             res.write(str(e))
         else:
             res.status_code = 500
-
-        # only debug mode should show traceback
-        if self.debug:
-            res.write('\n' + traceback.format_exc())
+            # only debug mode should show traceback
+            if self.debug:
+                res.write('\n' + traceback.format_exc())
         return res
 
     def _write_response(self, res, writer: asyncio.StreamWriter):

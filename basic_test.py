@@ -15,7 +15,7 @@ class ArgumentHandler(RequestHandler):
 
     async def get(self):
         # query string test
-        self.write('query ' + self.get_query_argument('neko') or 'None')
+        self.write('query ' + (self.get_query_argument('neko') or 'None'))
 
     async def post(self):
         # body test

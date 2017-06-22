@@ -332,6 +332,17 @@ class Application(metaclass=Singleton):
             self._handlers = list(self._handlers.values())
 
 
+    def test_server(self, loop: asyncio.BaseEventLoop):
+        """only for unittest"""
+        # only here use this module
+        import socket
+        sock = socket.socket()
+        sock.bind(('127.0.0.1', 0))
+        self._prepare()
+        coro = asyncio.start_server(self.__call__, sock=sock, loop=loop)
+        server = loop.run_until_complete(coro)
+        return server, sock.getsockname()
+
     def run(self, *, host: str = '127.0.0.1', port: int = 8080,
             loop_policy: asyncio.AbstractEventLoopPolicy = None,
             log_config: dict = DEFAULT_LOGGING):

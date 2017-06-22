@@ -1,4 +1,3 @@
-import re
 from imouto.web import Application
 from imouto.route import URLSpec
 
@@ -18,7 +17,8 @@ class Route:
         # TODO refactoring the ugly code, try to replace the Slot
         app = Application()
         if self.path in app._handlers:
-            setattr(app._handlers[self.path].handler_class, self.method.lower(), handler)
+            setattr(app._handlers[self.path].handler_class,
+                    self.method.lower(), handler)
         else:
             obj = MagicRoute()
             setattr(obj, '_magic_route', True)

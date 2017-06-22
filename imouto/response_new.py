@@ -15,6 +15,3 @@ class BaseHTTPResponse:
     @property
     def cookies(self):
         pass
-
-
-

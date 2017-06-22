@@ -1,4 +1,4 @@
-from imouto.web import RequestHandler, Application, RedirectHandler
+from imouto.web import RequestHandler, Application
 
 
 class Redirect_1(RequestHandler):
@@ -18,4 +18,3 @@ app = Application([
     (r'/2', Redirect_2)
 ])
 app.run()
-

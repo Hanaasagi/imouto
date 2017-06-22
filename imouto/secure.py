@@ -7,6 +7,7 @@ from imouto.util import tob, touni
 # for type checking
 from typing import Iterable, Union
 
+
 def create_secure_value(name: str, value: str, *, secret: str) -> bytes:
     """create secure value
     will be following format
@@ -15,7 +16,7 @@ def create_secure_value(name: str, value: str, *, secret: str) -> bytes:
     timestamp = tob(str(int(time.time())))
     value_b64 = base64.b64encode(tob(value))
     signature = _generate_signature(secret, name, value_b64, timestamp)
-    return  b"|".join([value_b64, timestamp, signature])
+    return b"|".join([value_b64, timestamp, signature])
 
 
 def _generate_signature(secret: str, *parts: Iterable) -> bytes:
@@ -49,6 +50,7 @@ def verify_secure_value(name: str, value: Union[str, bytes], *,
 if __name__ == '__main__':
     # fake `time.time`
     time.time = lambda: 1497854241.6677122
+    result = b'MjMzMzM=|1497854241|d1bc51b38323add85ae80a9f130d3b5440026cca'
     value = create_secure_value('test', '23333', secret='root')
-    assert value == b'MjMzMzM=|1497854241|d1bc51b38323add85ae80a9f130d3b5440026cca'
+    assert value == result
     assert verify_secure_value('test', value, secret='root') == '23333'

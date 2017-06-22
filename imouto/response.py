@@ -37,9 +37,11 @@ class Response:
 
     def output(self):
         if 'Content-Length' not in self.headers:
-            self.headers['Content-Length'] = touni(sum(len(_) for _ in self._chunks))
+            self.headers['Content-Length'] = touni(sum(len(_)
+                                                       for _ in self._chunks))
 
-        headers = b''.join(b'%b: %b\r\n' % (tob(key), tob(value)) for key, value in self.headers.items())
+        headers = b''.join(b'%b: %b\r\n' % (tob(key), tob(value))
+                           for key, value in self.headers.items())
 
         if self.cookies:
             headers += tob(self.cookies.output()) + b'\r\n'

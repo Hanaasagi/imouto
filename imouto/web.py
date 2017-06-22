@@ -1,20 +1,19 @@
-import re
 import time
 import asyncio
 import traceback
 import logging.config
-from collections import Mapping, OrderedDict
+from collections import OrderedDict
 from datetime import date as date_t, datetime, timedelta
-from http.cookies import SimpleCookie
 from imouto import Request, Response
 from imouto.autoload import autoload
 from imouto.route import URLSpec
 from imouto.log import access_log, app_log, DEFAULT_LOGGING
-from imouto.util import hkey, hval, tob, touni, Singleton
+from imouto.util import hkey, hval, touni, Singleton
 from httptools import HttpRequestParser
 
 # for type check
 from typing import Tuple, List, Any
+
 
 class HTTPError(Exception):
     """Exception represented HTTP Error
@@ -29,9 +28,9 @@ class HTTPError(Exception):
             self.log_message = log_message.replace('%', '%%')
 
     def __str__(self):
-        if self.log_message:
-            return "%s (%s)" % (message, self.log_message % self.args)
+        # TODO
         return ''
+
 
 def log(status_code: int, method: str, path: str, query_string: str) -> None:
     """logging the access message
@@ -49,7 +48,7 @@ def log(status_code: int, method: str, path: str, query_string: str) -> None:
     logger('', extra={
         'status': status_code,
         'method': method,
-        'path' :  path
+        'path':  path
     })
 
 
@@ -222,13 +221,11 @@ class Application(metaclass=Singleton):
         self.debug = settings.get('debug', False)
         self.default_handler = settings.get('default_handler', None)
 
-
     def add_handlers(self, handlers: List[Tuple[str, str]]):
         """Append handlers to handler list
         """
         for route, handler in handlers:
             self._handlers[route] = URLSpec(route, handler)
-
 
     def _find_handler(self, path: str):
         """Find the corresponding handler for the path
@@ -241,7 +238,8 @@ class Application(metaclass=Singleton):
             match = spec.regex.match(path)
             if match:
                 handler_class = spec.handler_class
-                handler_kwargs = spec.kwargs
+                # TODO
+                # handler_kwargs = spec.kwargs
                 if spec.regex.groups:
                     if spec.regex.groupindex:
                         path_kwargs = match.groupdict()
@@ -250,12 +248,11 @@ class Application(metaclass=Singleton):
                 return handler_class, path_args, path_kwargs
         return self.default_handler, path_args, path_kwargs
 
-
     async def _parse_request(self, request_reader: asyncio.StreamReader,
                              response_writer: asyncio.StreamWriter) -> Request:
         """parse data from StreamReader and build the request object
         """
-        limit  = 2 ** 16
+        limit = 2 ** 16
         req = Request()
         parser = HttpRequestParser(req)
 
@@ -272,15 +269,17 @@ class Application(metaclass=Singleton):
         return req
 
     async def _execute(self, handler_class: type,
-                             req: Request, args, kwargs):
+                       req: Request, args, kwargs):
         """"""
         method = req.method
         if handler_class is None:
             raise HTTPError(404)
 
         res = Response()
-        if hasattr(handler_class, '_magic_route') and handler_class._magic_route:
-            await getattr(handler_class, method.lower())(req, res, *args, **kwargs)
+        is_magic_route = getattr(handler_class, '_magic_route', False)
+        if is_magic_route:
+            await getattr(handler_class, method.lower())(
+                                            req, res, *args, **kwargs)
         else:
             handler = handler_class(self, req, res)
             await getattr(handler, method.lower())(*args, **kwargs)
@@ -331,7 +330,6 @@ class Application(metaclass=Singleton):
         if isinstance(self._handlers, OrderedDict):
             self._handlers = list(self._handlers.values())
 
-
     def test_server(self, loop: asyncio.BaseEventLoop):
         """only for unittest"""
         # only here use this module
@@ -360,7 +358,7 @@ class Application(metaclass=Singleton):
         loop = asyncio.get_event_loop()
         loop.set_debug(True)
         app_log.info('Running on %s:%s %s(Press CTRL+C to quit)'
-                     % ( host, port, '[debug mode]' if self.debug else ''))
+                     % (host, port, '[debug mode]' if self.debug else ''))
         # mypy doesn't know self mean, use self.__call__ explicitly
         coro = asyncio.start_server(self.__call__, host, port, loop=loop)
         server = loop.run_until_complete(coro)
@@ -372,4 +370,3 @@ class Application(metaclass=Singleton):
         server.close()
         loop.run_until_complete(server.wait_closed())
         loop.close()
-

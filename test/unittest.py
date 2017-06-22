@@ -1,7 +1,6 @@
 import unittest
 import asyncio
 import gc
-import socket
 from asyncio import test_utils
 from imouto.web import RequestHandler, Application
 from imouto.magicroute import GET
@@ -36,17 +35,17 @@ class ImoutoTests(test_utils.TestCase):
     def get_response(self, request_data):
         server, addr = app.test_server(self.loop)
         response_data = self.loop.run_until_complete(
-                            asyncio.Task(client(addr, self.loop, request_data),
-                            loop=self.loop))
+            asyncio.Task(client(addr, self.loop, request_data),
+                         loop=self.loop))
         server.close()
         self.loop.run_until_complete(server.wait_closed())
         return response_data
 
-    def generate_request(self, method=b'GET', path = b'/', version=b'1.1',
+    def generate_request(self, method=b'GET', path=b'/', version=b'1.1',
                          accept=b'*/*', accept_encoding=b'gzip, deflate',
                          connection=b'Keep-alive', body=b'', **options):
         headers = [b'%b: %b\r\n' % (tob(hkey(key)), tob(value))
-                                            for key, value in options.items()]
+                   for key, value in options.items()]
         return (b'%b %b HTTP/%b\r\n'
                 b'Accept: %b\r\n'
                 b'Accept-Encoding: %b\r\n'
@@ -100,9 +99,11 @@ class ImoutoTests(test_utils.TestCase):
         self.assertIn(b'sum: 55', response_data)
 
     def test_post_data(self):
+        content_type = b'application/x-www-form-urlencoded; charset=utf-8'
         request_data = self.generate_request(method=b'POST', path=b'/post/',
-                            content_type=b'application/x-www-form-urlencoded; charset=utf-8',
-                            content_length=b'9', body=b'a=33&b=22')
+                                             content_type=content_type,
+                                             content_length=b'9',
+                                             body=b'a=33&b=22')
         response_data = self.get_response(request_data)
         self.assertIn(b'product: 726', response_data)
 
@@ -142,6 +143,7 @@ class QueryHandler(RequestHandler):
         sum_ = int(a) + int(b)
         self.write('sum: {}'.format(sum_))
 
+
 class PostHandler(RequestHandler):
 
     async def post(self):
@@ -149,6 +151,7 @@ class PostHandler(RequestHandler):
         b = self.get_body_argument('b')
         product = int(a) * int(b)
         self.write('product: {}'.format(product))
+
 
 app = Application([
     (r'/', HelloWorldHandler),
@@ -158,6 +161,7 @@ app = Application([
     (r'/query/', QueryHandler),
     (r'/post/', PostHandler),
 ])
+
 
 async def Ahandler(res, req):
     req.write('It is magic route')

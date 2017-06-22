@@ -12,5 +12,6 @@ class HeaderDemo(RequestHandler):
         self.set_header('secure-token',
                         create_secure_value('name', 'value', secret='root'))
 
+
 app = Application([(r'/', HeaderDemo)])
 app.run()

@@ -7,14 +7,14 @@ class ColorizingStreamHandler(logging.StreamHandler):
 
     # color names to indices
     color_map = {
-        'black'  : 0,
-        'red'    : 1,
-        'green'  : 2,
-        'yellow' : 3,
-        'blue'   : 4,
+        'black': 0,
+        'red': 1,
+        'green': 2,
+        'yellow': 3,
+        'blue': 4,
         'magenta': 5,
-        'cyan'   : 6,
-        'white'  : 7,
+        'cyan': 6,
+        'white': 7,
     }
     csi = '\x1b['
     reset = '\x1b[0m'
@@ -108,7 +108,8 @@ DEFAULT_LOGGING = {
             'datefmt': '%Y-%m-%d %H:%M:%S'
         },
         'access': {
-            'format': '[%(method)s] %(asctime)s [%(status)d] %(path)s %(message)s',
+            'format': ('[%(method)s] %(asctime)s [%(status)d] '
+                       '%(path)s %(message)s'),
             'datefmt': '%Y-%m-%d %H:%M:%S'
         }
     },
@@ -134,4 +135,5 @@ if __name__ == '__main__':
     app_log.info("Hello world")      # output should be in green
     app_log.warn("Hello world")      # output should be in yellow
     app_log.error("Hello world")     # output should be in red
-    app_log.critical("Hello world")  # output should be in white with a red back ground
+    # output should be in white with a red back ground
+    app_log.critical("Hello world")

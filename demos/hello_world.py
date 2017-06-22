@@ -9,6 +9,6 @@ class HelloWorldHandler(RequestHandler):
     async def get(self, name):
         self.write(self.hoge + name)
 
+
 app = Application([(r'/(\w+)', HelloWorldHandler)], debug=True)
 app.run()
-

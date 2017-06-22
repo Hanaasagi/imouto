@@ -29,7 +29,8 @@ def autoload(interval=1):
     if not os.environ.get('IMOUTO_APP'):
         try:
             lockfile = None
-            fd, lockfile = tempfile.mkstemp(prefix='IMOUTO_APP', suffix='.lock')
+            fd, lockfile = tempfile.mkstemp(
+                prefix='IMOUTO_APP', suffix='.lock')
             os.close(fd)
 
             while os.path.exists(lockfile):
@@ -42,7 +43,8 @@ def autoload(interval=1):
                 p = subprocess.Popen(args, env=environ)
 
                 # Check if child process has terminated
-                # A None value indicates that the process hasn’t terminated yet.
+                # A None value indicates that the process hasn’t terminated
+                # yet.
                 while p.poll() is None:
                     # update the modified time
                     os.utime(lockfile, None)
@@ -94,7 +96,7 @@ class FileCheckerThread(threading.Thread):
         self.status = None
 
     def run(self):
-        mtime = lambda path: os.stat(path).st_mtime
+        def mtime(path): return os.stat(path).st_mtime
         files = dict()
 
         # get all imported modules and their filepath

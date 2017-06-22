@@ -12,7 +12,7 @@ def url_encode(value, plus=True):
     otherwise ' ' will convert to '%20'
     >>> url_encode('www.google.com.hk/#safe=strict&q=python3 url escape')
     'www.google.com.hk%2F%23safe%3Dstrict%26q%3Dpython3+url+escape'
-    >>> url_encode('www.google.com.hk/#safe=strict&q=python3 url escape', plus=False)
+    >>> url_encode('www.google.com.hk/#safe=strict&q=python3 url escape',False)
     'www.google.com.hk/%23safe%3Dstrict%26q%3Dpython3%20url%20escape'
     """
     quote = urllib.parse.quote_plus if plus else urllib.parse.quote
@@ -60,14 +60,16 @@ def touni(s, enc='utf8', err='strict'):
 
 def hkey(key):
     if '\n' in key or '\r' in key or '\0' in key:
-        raise ValueError("Header names must not contain control characters: %r" % key)
+        raise ValueError(
+            "Header names must not contain control characters: %r" % key)
     return key.title().replace('_', '-')
 
 
 def hval(value):
     value = touni(value)
     if '\n' in value or '\r' in value or '\0' in value:
-        raise ValueError("Header value must not contain control characters: %r" % value)
+        raise ValueError(
+            "Header value must not contain control characters: %r" % value)
     return value
 
 
@@ -76,7 +78,8 @@ class Singleton(type):
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
-            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+            cls._instances[cls] = super(
+                Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
 
 
@@ -151,6 +154,7 @@ class HeaderDict(MultiDict):
     >>> d == {'a': [0], 'b': [1]}
     True
     """
+
     def __init__(self, *a, **k):
         """TODO
         """

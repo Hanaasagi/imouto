@@ -8,4 +8,5 @@ after_success: coveralls
 branches:
   only:
     - master
-
+notifications:
+  email: false

@@ -179,6 +179,85 @@ class HeaderDict(MultiDict):
         return super().getall(hkey(key))
 
 
+class LRUCache:
+    """ LRUCache implemented with HashMap and LinkList
+    >>> cache = LRUCache(3)
+    >>> cache.set(1,1)
+    >>> cache.set(2,2)
+    >>> cache.set(3,3)
+    >>> cache
+    capacity: 3 [(1, 1), (2, 2), (3, 3)]
+    >>> cache.get(1)
+    1
+    >>> cache
+    capacity: 3 [(2, 2), (3, 3), (1, 1)]
+    >>> cache.set(4,4)
+    >>> cache
+    capacity: 3 [(3, 3), (1, 1), (4, 4)]
+    """
+
+    class Node:
+
+        def __init__(self, key, value):
+            self.key = key
+            self.value = value
+            self.pre = None
+            self.next = None
+
+    def __init__(self, capacity):
+        self.capacity = capacity
+        self._head = self.Node(None, None)
+        self._tail = self.Node(None, None)
+        self._head.next = self._tail
+        self._tail.pre = self._head
+        self._map = {}
+
+    def get(self, key):
+        n = self._map.get(key, None)
+        if n is not None:
+            n.pre.next = n.next
+            n.next.pre = n.pre
+            self._append_tail(n)
+            return n.value
+        raise KeyError(key)
+
+    def set(self, key, value):
+        n = self._map.get(key, None)
+        # n already in the map
+        if n is not None:
+            n.value = value
+            self._map[key] = n
+            n.pre.next = n.next
+            n.next.pre = n.pre
+            self._append_tail(n)
+            return
+
+        # n not in the map
+        # check the capacity
+        if len(self._map) == self.capacity:
+            tmp = self._head.next
+            self._head.next = self._head.next.next
+            self._head.next.pre = self._head
+            self._map.pop(tmp.key)
+        n = self.Node(key, value)
+        self._append_tail(n)
+        self._map[key] = n
+
+    def _append_tail(self, n):
+        n.next = self._tail
+        n.pre = self._tail.pre
+        self._tail.pre.next = n
+        self._tail.pre = n
+
+    def __repr__(self):
+        tmp = self._head.next
+        result = []
+        while tmp is not self._tail:
+            result.append((tmp.key, tmp.value))
+            tmp = tmp.next
+        return 'capacity: {} {}'.format(self.capacity, result.__repr__())
+
+
 if __name__ == '__main__':
     import doctest
     doctest.testmod(verbose=False)

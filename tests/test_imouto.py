@@ -94,7 +94,7 @@ def test_get_query_string(client):
         (r'/query/', QueryHandler),
     ])
     client.feed(app)
-    response= client.get('/query/?a=22&b=33')
+    response = client.get('/query/?a=22&b=33')
     assert b'sum: 55', response
 
 

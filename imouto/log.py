@@ -44,7 +44,7 @@ class ColorizingStreamHandler(logging.StreamHandler):
             self.flush()
         except (KeyboardInterrupt, SystemExit):
             raise
-        except:
+        except Exception:
             self.handleError(record)
 
     def colorize(self, message, record):

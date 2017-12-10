@@ -7,7 +7,7 @@ install:
   - pip install -r test-requirements.txt
 script:
   - python setup.py check
-  - mypy imouto
+  - mypy imouto --ignore-missing-imports
   - flake8 imouto
   - pytest
 after_success: coveralls

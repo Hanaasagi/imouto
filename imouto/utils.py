@@ -3,6 +3,8 @@ import urllib.parse
 from string import ascii_letters, digits
 from collections import UserDict, Iterable
 
+from typing import Mapping
+
 """Some utility functions and classes"""
 
 
@@ -26,7 +28,7 @@ def re_unescape(s):
     def _re_unescape_replacement(match):
         group = match.group(1)
         if group[0] in _alphanum:
-            raise ValueError("cannot unescape '\\\\%s'" % group[0])
+            raise ValueError(r"cannot unescape '\\%s'" % group[0])
         return group
 
     return _re_unescape_pattern.sub(_re_unescape_replacement, s)
@@ -40,28 +42,27 @@ def trim_keys(dict_):
     return {k.strip(): v for k, v in dict_.items()}
 
 
+# Some helpers for string/byte handling
 def tob(s, enc='utf8'):
-    """convert to bytes
-    """
-    try:
+    if isinstance(s, str):
         return s.encode(enc)
-    except AttributeError:
-        return bytes(s)
+    return b'' if s is None else bytes(s)
 
 
 def touni(s, enc='utf8', err='strict'):
-    """convert to unicode
-    """
-    try:
+    if isinstance(s, bytes):
         return s.decode(enc, err)
-    except AttributeError:
-        return str(s)
+    return '' if s is None else str(s)
 
 
 def hkey(key):
+    """
+    >>> hkey('content_type')
+    'Content-Type'
+    """
     if '\n' in key or '\r' in key or '\0' in key:
         raise ValueError(
-            "Header names must not contain control characters: %r" % key)
+            "Header name must not contain control characters: %r" % key)
     return key.title().replace('_', '-')
 
 
@@ -74,7 +75,8 @@ def hval(value):
 
 
 class Singleton(type):
-    _instances = {}
+
+    _instances: Mapping[type, object] = {}
 
     def __call__(cls, *args, **kwargs):
         if cls not in cls._instances:
@@ -136,7 +138,7 @@ class MultiDict(UserDict):
             val = default
         return val
 
-    def getall(self, key):
+    def get_all(self, key):
         return self.data.get(key, None) or []
 
     def update(self, iterable=None, **k_v):
@@ -158,7 +160,7 @@ class HeaderDict(MultiDict):
     def __init__(self, *a, **k):
         """TODO
         """
-        self.data = {k: [v] for (k, v) in dict(*a, **k).items()}
+        self.data = {hkey(k): [v] for (k, v) in dict(*a, **k).items()}
 
     def __contains__(self, key):
         return super().__contains__(hkey(key))
@@ -175,8 +177,8 @@ class HeaderDict(MultiDict):
     def get(self, key, default=None, index=-1):
         return super().get(hkey(key), default, index)
 
-    def getall(self, key):
-        return super().getall(hkey(key))
+    def get_all(self, key):
+        return super().get_all(hkey(key))
 
 
 class LRUCache:

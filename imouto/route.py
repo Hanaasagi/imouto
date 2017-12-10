@@ -1,5 +1,5 @@
 import re
-from imouto.util import tob, url_encode, re_unescape
+from imouto.utils import tob, url_encode, re_unescape
 
 
 class URLSpec(object):

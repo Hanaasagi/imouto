@@ -3,16 +3,12 @@ import json
 import cgi
 import urllib.parse as parse
 from httptools import parse_url
-from imouto.util import MultiDict, HeaderDict
+from imouto.utils import MultiDict, HeaderDict, trim_keys
 
 
 REQUEST_STATE_PROCESSING = 0
 REQUEST_STATE_CONTINUE = 1
 REQUEST_STATE_COMPLETE = 2
-
-
-def trim_keys(dict_):
-    return {key.strip(): value for key, value in dict_.items()}
 
 
 class FileStorage:

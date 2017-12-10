@@ -96,7 +96,8 @@ class FileCheckerThread(threading.Thread):
         self.status = None
 
     def run(self):
-        def mtime(path): return os.stat(path).st_mtime
+        def mtime(path):
+            return os.stat(path).st_mtime
         files = dict()
 
         # get all imported modules and their filepath

@@ -1,11 +1,15 @@
 language: python
 python:
   - "3.6"
-  - "3.6-dev"
-  - "3.7-dev"
   - "nightly"
-install: pip install tox-travis coveralls
-script: tox
+install:
+  - pip install -r requirements.txt
+  - pip install -r test-requirements.txt
+script:
+  - python setup.py check
+  - mypy imouto
+  - flake8 imouto
+  - pytest
 after_success: coveralls
 branches:
   only:

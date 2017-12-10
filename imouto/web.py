@@ -8,32 +8,16 @@ from imouto import Request, Response
 from imouto.autoload import autoload
 from imouto.route import URLSpec
 from imouto.log import access_log, app_log, DEFAULT_LOGGING
-from imouto.util import hkey, hval, touni, Singleton
+from imouto.utils import hkey, hval, touni, Singleton
+from imouto.errors import HTTPError, MethodNotAllowed  # type: ignore
 from httptools import HttpRequestParser
 
 # for type check
-from typing import Tuple, List, Any
-
-
-class HTTPError(Exception):
-    """Exception represented HTTP Error
-    """
-
-    def __init__(self, status_code: int = 500, log_message: str = '',
-                 *args) -> None:
-        self.status_code = status_code
-        self.log_message = log_message
-        self.args = args
-        if log_message and not args:
-            self.log_message = log_message.replace('%', '%%')
-
-    def __str__(self):
-        # TODO
-        return ''
+from typing import Tuple, List, Mapping, Any
 
 
 def log(status_code: int, method: str, path: str, query_string: str) -> None:
-    """logging the access message
+    """ logging the access message
     logging level depend http status code
     """
     if status_code >= 500:
@@ -48,72 +32,63 @@ def log(status_code: int, method: str, path: str, query_string: str) -> None:
     logger('', extra={
         'status': status_code,
         'method': method,
-        'path':  path
+        'path': path
     })
 
 
 class RequestHandler:
-    """Base class
-    """
+    """ Base class """
 
-    def __init__(self, application, request: Request, response: Response,
+    def __init__(self, app, request: Request, response: Response,
                  **kwargs) -> None:
         """subclass should override initialize method rather than this
         """
-        self.application = application
+        self.app = app
         self.request = request
         self.response = response
         self.initialize(**kwargs)
 
-    def initialize(self, *args, **kwargs):
-        """subclass initialization
-        need to be overrided
-        """
-        pass
+    def initialize(self, **kwargs):
+        """ subclass initialization need to be overrided """
 
     async def prepare(self, *args, **kwargs):
-        """invoked before get/post/.etc
-        """
-        pass
+        """ invoked before get/post/.etc """
 
     async def head(self, *args, **kwargs):
-        raise HTTPError(405)
+        raise MethodNotAllowed  # pragma: no cover
 
-    async def get(self, *args, **kwargs):
-        raise HTTPError(405)
+    async def get(self, *args, **kwargs):  # pragma: no cover
+        raise MethodNotAllowed
 
     async def post(self, *args, **kwargs):
-        raise HTTPError(405)
+        raise MethodNotAllowed  # pragma: no cover
 
     async def delete(self, *args, **kwargs):
-        raise HTTPError(405)
+        raise MethodNotAllowed  # pragma: no cover
 
     async def patch(self, *args, **kwargs):
-        raise HTTPError(405)
+        raise MethodNotAllowed  # pragma: no cover
 
     async def put(self, *args, **kwargs):
-        raise HTTPError(405)
+        raise MethodNotAllowed  # pragma: no cover
 
     async def options(self, *args, **kwargs):
-        raise HTTPError(405)
+        raise MethodNotAllowed  # pragma: no cover
 
     def write(self, chunk: str):
-        """write data to the response buffer
+        """ write data to the response buffer
         chunk may be other types for example None
         so call their `__str__` method to get string epresentation
         """
         self.response.write(chunk.__str__())
 
     def write_json(self, data: Any):
-        """data will converted to json and write
-        """
+        """ data will converted to json and write """
         # need enclosing try-except
         self.response.write_json(data)
 
-    def redirect(self, url: str, permanent=False):
-        """HTTP Redirect
-        permanent determines 301 or 302
-        """
+    def redirect(self, url: str, permanent: bool = False):
+        """ HTTP Redirect permanent determines 301 or 302 """
         if permanent:
             self.response.status_code = 301
         else:
@@ -121,38 +96,37 @@ class RequestHandler:
         self.response.headers['Location'] = url
 
     def get_query_argument(self, name: str, default: Any = None):
-        """get parameter from query string
-        """
+        """ get parameter from query string """
         return self.request.query.get(name, default)
 
     def get_body_argument(self, name: str, default: Any = None):
-        """get argument from request body
-        """
+        """ get argument from request body """
         return self.request.form.get(name, default)
 
     @property
     def headers(self):
+        """ return all headers """
         return self.request.headers
 
     def get_header(self, name: str, default: Any = None):
+        """ get specified header from request header """
         return self.headers.get(name, default)
 
     def set_header(self, name: str, value: str):
+        """ set response header """
         self.response.headers[hkey(name)] = hval(value)
 
     @property
     def cookies(self):
-        """request cookies
-        """
+        """ return all request cookies """
         return self.request.cookies
 
     def get_cookie(self, name: str, default: Any = None):
-        """get cookie from http request, can set default value
-        """
+        """ get cookie from http request """
         return self.cookies.get(name, default)
 
     def set_cookie(self, name: str, value: str, **options):
-        """set cookie to http resposne
+        """ set cookie to http resposne
         :param options: enable to include following options
         :param max_age: maximum age in seconds. (default: None)
         :param expires: a datetime object or UNIX timestamp. (default: None)
@@ -164,7 +138,7 @@ class RequestHandler:
             (default: off, requires Python 2.6 or newer).
         """
         if len(value) > 4096:
-            raise ValueError('Cookie value to long.')
+            raise ValueError('cookie value is too long.')
 
         self.response.cookies[name.strip()] = hval(value)
 
@@ -178,11 +152,12 @@ class RequestHandler:
                     value = value.timetuple()
                 elif isinstance(value, (int, float)):
                     value = time.gmtime(value)
+                assert isinstance(value, tuple)
                 value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
             self.response.cookies[name][key] = value
 
     def clear_cookie(self, key: str, **options):
-        """make the cookie expired
+        """ make the cookie expired
         IE6, IE7, and IE8 does not support “max-age”, while (mostly)
         all browsers support expires
         """
@@ -195,21 +170,16 @@ class RedirectHandler(RequestHandler):
     """this handler do nothing, just redirect
     """
 
-    def initialize(self, url: str, permanent=True):
-        self._url = url
-        self._permanent = permanent
+    def initialize(self, **kwargs):
+        self._url: str = kwargs.get('url', '/')
+        self._permanent: bool = kwargs.get('permanent', True)
 
     async def get(self):
         self.redirect(self._url, permanent=self._permanent)
 
 
-# Maybe it make no sense
-class ErrorHandler(RequestHandler):
-    pass
-
-
 class Application(metaclass=Singleton):
-    """Application"""
+    """ Base Application implemention"""
 
     def __init__(self, handlers=None, **settings):
         self._handlers = OrderedDict()
@@ -233,7 +203,8 @@ class Application(metaclass=Singleton):
         otherwise 404 Not Found
         """
 
-        path_args, path_kwargs = [], {}
+        path_args: List[str] = []
+        path_kwargs: Mapping[str, str] = {}
         for spec in self._handlers:
             match = spec.regex.match(path)
             if match:
@@ -279,7 +250,7 @@ class Application(metaclass=Singleton):
         is_magic_route = getattr(handler_class, '_magic_route', False)
         if is_magic_route:
             await getattr(handler_class, method.lower())(
-                                            req, res, *args, **kwargs)
+                req, res, *args, **kwargs)
         else:
             handler = handler_class(self, req, res)
             await getattr(handler, method.lower())(*args, **kwargs)
@@ -330,7 +301,7 @@ class Application(metaclass=Singleton):
         if isinstance(self._handlers, OrderedDict):
             self._handlers = list(self._handlers.values())
 
-    def test_server(self, loop: asyncio.BaseEventLoop):
+    def test_server(self, loop: asyncio.AbstractEventLoop):
         """only for unittest"""
         # only here use this module
         import socket

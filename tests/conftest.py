@@ -2,7 +2,7 @@ import gc
 import asyncio
 import pytest
 from asyncio import test_utils
-from imouto.util import tob, hkey
+from imouto.utils import tob, hkey
 
 
 class Client(test_utils.TestCase):

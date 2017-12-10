@@ -2,7 +2,7 @@ import time
 import hmac
 import base64
 import hashlib
-from imouto.util import tob, touni
+from imouto.utils import tob, touni
 
 # for type checking
 from typing import Iterable, Union

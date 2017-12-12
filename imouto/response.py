@@ -1,7 +1,8 @@
 import json
 from collections import Mapping
 from http.cookies import SimpleCookie
-from imouto.utils import HeaderDict, tob, touni
+from imouto.datastructures import HeaderDict
+from imouto.utils import tob, touni
 from http.client import responses as ALL_STATUS
 
 

@@ -74,8 +74,34 @@ class TestImmutableDict:
 
 class TestConstantsObject:
 
-    def test_getattr(self):
+    def test(self):
         data = {'foo': 1, 'bar': 2, 'hoge': 3}
         d = ConstantsObject(data)
         assert d.foo == 1
 
+
+class TestMultiDict:
+
+    def test(self):
+        d = MultiDict(a=[0], b=[1])
+        assert d == {'a': [0], 'b': [1]}
+        assert sorted(list(d.values())) == [0, 1]
+        assert len(d) == 2
+        assert d['a'] == 0
+        d['b'] = 2
+        assert d.get('b') == 2
+        assert d.get('c', 3) == 3
+        d.update(b=4, c=5)
+        assert d == {'b': [1, 2, 4], 'a': [0], 'c': [5]}
+        assert d.get_all('b') == [1, 2, 4]
+        assert sorted(list(d.allitems())) ==\
+            sorted([('b', 1), ('b', 2), ('b', 4), ('a', 0), ('c', 5)])
+
+
+class TestHeaderDict:
+
+    def test(self):
+        d = HeaderDict(content_type='text/plain')
+        assert d['Content-Type'] == 'text/plain'
+        del d['Content-Type']
+        assert len(d) == 0

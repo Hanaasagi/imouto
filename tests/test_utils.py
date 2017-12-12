@@ -58,28 +58,3 @@ def test_singleton():
 
     b = B()
     assert b is not a1
-
-
-def test_multidict():
-    d = MultiDict(a=[0], b=[1])
-    assert d == {'a': [0], 'b': [1]}
-    assert sorted(list(d.values())) == [0, 1]
-    assert len(d) == 2
-    assert d['a'] == 0
-    d['b'] = 2
-    assert d.get('b') == 2
-    assert d.get('c', 3) == 3
-    d.update(b=4, c=5)
-    assert d == {'b': [1, 2, 4], 'a': [0], 'c': [5]}
-    assert d.get_all('b') == [1, 2, 4]
-    assert sorted(list(d.allitems())) ==\
-        sorted([('b', 1), ('b', 2), ('b', 4), ('a', 0), ('c', 5)])
-
-
-def test_headerdict():
-    d = HeaderDict(content_type='text/plain')
-    assert d['Content-Type'] == 'text/plain'
-    del d['Content-Type']
-    assert len(d) == 0
-
-

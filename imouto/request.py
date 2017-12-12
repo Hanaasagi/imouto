@@ -3,7 +3,8 @@ import json
 import cgi
 import urllib.parse as parse
 from httptools import parse_url
-from imouto.utils import MultiDict, HeaderDict, trim_keys
+from imouto.utils import trim_keys
+from imouto.datastructures import MultiDict, HeaderDict
 
 
 REQUEST_STATE_PROCESSING = 0

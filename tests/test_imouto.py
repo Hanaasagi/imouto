@@ -78,7 +78,7 @@ def test_dynamic_route(client):
     ])
     client.feed(app)
     response = client.get('/2333/')
-    assert b'id: 2333', response
+    assert b'id: 2333' in response
 
 
 def test_get_query_string(client):

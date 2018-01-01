@@ -53,7 +53,7 @@ class Response:
         if len(value) > 4096:
             raise ValueError('cookie value is too long.')
 
-        self.response.cookies[name.strip()] = hval(value)
+        self.cookies[name.strip()] = hval(value)
 
         for key, value in options.items():
             key = hkey(key)
@@ -67,7 +67,7 @@ class Response:
                     value = time.gmtime(value)
                 assert isinstance(value, tuple)
                 value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
-            self.response.cookies[name][key] = value
+            self.cookies[name][key] = value
 
     def clear_cookie(self, key: str, **options):
         """ make the cookie expired

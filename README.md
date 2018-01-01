@@ -47,9 +47,8 @@ POST / '/mahou' > shoujo  # it will match '/mahou' and call `shoujo`
 
 - [x] basic functions
 - [x] debug mode
-- [ ] support GraphQL
-- [ ] unittest
-- [ ] add CI
+- [x] unittest
+- [x] add CI
 - [ ] documentation
 
 

@@ -127,7 +127,7 @@ class RequestHandler:
         return self.response.set_cookie(name, value, **options)
 
     def clear_cookie(self, key: str, **options):
-        return self.resposne.clear_cookie(key, **options)
+        return self.response.clear_cookie(key, **options)
 
 
 class RedirectHandler(RequestHandler):

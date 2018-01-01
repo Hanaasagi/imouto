@@ -4,6 +4,7 @@ import importlib
 from itertools import chain
 from operator import methodcaller
 from collections import UserDict
+from imouto.errors import ConfigError
 
 
 class ConfigAttribute:
@@ -27,9 +28,19 @@ class ConfigAttribute:
 
 class Config(UserDict):
 
-    def __init__(self, root_path, defaults=None):
+    def __init__(self, root_path=None, defaults=None):
         self.data = dict(defaults or {})
-        self.root_path = root_path
+        self._root_path = root_path
+
+    @property
+    def root_path(self):
+        if self._root_path is None:
+            raise ConfigError("set the root_path first")
+        return self._root_path
+
+    @root_path.setter  # type: ignore
+    def set_root_path(self, path):
+        self._root_path = path
 
     def from_object(self, obj):
         """ Update the values from the given object.

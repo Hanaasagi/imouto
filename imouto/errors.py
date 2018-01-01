@@ -5,6 +5,10 @@ implement exceptions
 from http import HTTPStatus
 
 
+class ConfigError(Exception):
+    """"""
+
+
 class HTTPError(Exception):
     """ Exception represented HTTP Error """
 

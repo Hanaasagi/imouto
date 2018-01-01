@@ -5,6 +5,8 @@ from collections import OrderedDict
 from imouto import Request, Response
 from imouto.autoload import autoload
 from imouto.route import URLSpec
+from imouto.datastructures import ImmutableDict
+from imouto.config import Config, ConfigAttribute
 from imouto.log import access_log, app_log, DEFAULT_LOGGING
 from imouto.utils import hkey, hval, touni, Singleton
 from imouto.errors import HTTPError, MethodNotAllowed  # type: ignore
@@ -145,15 +147,27 @@ class RedirectHandler(RequestHandler):
 class Application(metaclass=Singleton):
     """ Base Application implemention"""
 
-    def __init__(self, handlers=None, **settings):
-        self._handlers = OrderedDict()
-        self.settings = settings
+    config_class = Config
 
+    debug = ConfigAttribute('DEBUG')
+    testing = ConfigAttribute('TESTING')
+    secret_key = ConfigAttribute('SECRET_KEY')
+    root_path = None
+
+    default_config = ImmutableDict({
+        'DEBUG': False,
+        'TESTING': False,
+        'SECRET_KEY': 'imouto-web-framework',
+    })
+
+    def __init__(self, handlers=None, config=None, default_handler=None):
+        self._handlers = OrderedDict()
         if handlers:
             self.add_handlers(handlers)
 
-        self.debug = settings.get('debug', False)
-        self.default_handler = settings.get('default_handler', None)
+        self.default_handler = default_handler
+
+        self.config = config or Config()
 
     def add_handlers(self, handlers: List[Tuple[str, str]]):
         """Append handlers to handler list
@@ -278,11 +292,16 @@ class Application(metaclass=Singleton):
 
     def run(self, *, host: str = '127.0.0.1', port: int = 8080,
             loop_policy: asyncio.AbstractEventLoopPolicy = None,
-            log_config: dict = DEFAULT_LOGGING):
-        self._prepare()
+            log_config: dict = DEFAULT_LOGGING, debug=None):
         """run"""
+        if debug is not None:
+            self.debug = debug
+
+        self._prepare()
+
         if self.debug:
             autoload()
+
         logging.config.dictConfig(log_config)
         if loop_policy:
             # For example `uvloop` can improve performance significantly
